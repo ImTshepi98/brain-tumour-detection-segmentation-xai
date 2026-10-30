@@ -16,9 +16,13 @@ import csv
 import io
 import json
 import tarfile
+import sys
 from pathlib import Path
 
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from common import bits_to_channels, seg_to_bits  # noqa: F401  (re-exported for tests)
 
 MODALITIES = ("t1", "t1ce", "t2", "flair")
 SEED = 42
@@ -39,19 +43,6 @@ def native_seg(shape, rng):
     seg[_ellipsoid(shape, c, (r * 1.0,) * 3)] = 4
     seg[_ellipsoid(shape, c, (r * 0.5,) * 3)] = 1
     return seg
-
-
-def seg_to_bits(seg):
-    """Native labels -> uint8 bits (bit0 ET={4}, bit1 TC={1,4}, bit2 WT={1,2,4})."""
-    et = seg == 4
-    tc = np.isin(seg, (1, 4))
-    wt = np.isin(seg, (1, 2, 4))
-    return (et.astype(np.uint8) | (tc.astype(np.uint8) << 1) | (wt.astype(np.uint8) << 2))
-
-
-def bits_to_channels(bits):
-    """uint8 bits -> float32 (3, ...) in order [ET, TC, WT]."""
-    return np.stack([(bits >> k) & 1 for k in range(3)]).astype(np.float32)
 
 
 def make_case(shape=(32, 32, 32), tumour=True, healthy_t1t2_only=None, rng=None):

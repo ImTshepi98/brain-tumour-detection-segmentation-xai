@@ -4,6 +4,7 @@ Per subject (all 577 paired, no age filter):
   1. SynthStrip on native T1 (owner's SHA-pinned tool) -> brain mask.
   2. ANTs rigid T2 -> T1 (whole head), T2 resampled to T1 space, both masked.
   3. ANTs affine T1-brain -> BraTS-space T1 template (built here from BraTS train cases).
+     Both registrations are estimated on 2 mm copies (--reg-spacing) and applied at full resolution.
   4. T1, T2 and mask warped onto the BraTS 1 mm grid (240x240x155, BraTS affine).
   5. Owner's z-score over non-zero voxels inside the warped mask; same crop / 2x
      brain-masked pooling / padding as Phase 1 (crop.json); channels [T1, 0, T2, 0], fp16.
@@ -127,6 +128,16 @@ def skullstrip(t1_path, mask_path, tmp):
         raise RuntimeError("synthstrip failed: " + r.stderr[-500:])
 
 
+def lowres(img):
+    """Registration runs on a copy resampled to CFG['reg_spacing'] mm (transforms are in
+    physical space, so they are then applied to the full-resolution images)."""
+    import ants
+    sp = CFG.get("reg_spacing", 0)
+    if not sp:
+        return img
+    return ants.resample_image(img, (sp, sp, sp), use_voxels=False, interp_type=0)
+
+
 def dice(a, b):
     a, b = a.astype(bool), b.astype(bool)
     return float(2 * (a & b).sum() / max(a.sum() + b.sum(), 1))
@@ -152,15 +163,15 @@ def process_subject(job):
         rec["native_t1_spacing"] = [round(float(s), 3) for s in t1.spacing]
         rec["native_t2_spacing"] = [round(float(s), 3) for s in t2.spacing]
         # rigid T2 -> T1 on whole-head images
-        rig = ants.registration(fixed=t1, moving=t2, type_of_transform="Rigid", random_seed=SEED,
-                                outprefix=str(tmp / "rig_"))
+        rig = ants.registration(fixed=lowres(t1), moving=lowres(t2), type_of_transform="Rigid",
+                                random_seed=SEED, outprefix=str(tmp / "rig_"))
         t2_in_t1 = ants.apply_transforms(fixed=t1, moving=t2, transformlist=rig["fwdtransforms"],
                                          interpolator="linear")
         t1b, t2b = t1 * mask, t2_in_t1 * mask
         tpl = ants.image_read(CFG["template"])
         tpl_mask = ants.image_read(CFG["template_mask"])
-        aff = ants.registration(fixed=tpl, moving=t1b, type_of_transform="Affine", random_seed=SEED,
-                                outprefix=str(tmp / "aff_"))
+        aff = ants.registration(fixed=lowres(tpl), moving=lowres(t1b), type_of_transform="Affine",
+                                random_seed=SEED, outprefix=str(tmp / "aff_"))
         rec["t_register"] = round(time.time() - t0 - rec["t_skullstrip"], 1)
         tr = aff["fwdtransforms"]
         w = {}
@@ -246,6 +257,7 @@ def main(argv=None):
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--template-cases", type=int, default=60)
     ap.add_argument("--expected-shape", type=int, nargs=3, default=[240, 240, 155])
+    ap.add_argument("--reg-spacing", type=float, default=2.0, help="mm; 0 = register at native resolution")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--subjects", nargs="*", default=None, help="only these (reruns of failures)")
     ap.add_argument("--max-minutes", type=float, default=660)
@@ -287,7 +299,8 @@ def main(argv=None):
     log(f"shard {args.shard}/{args.nshards}: {len(jobs)} subjects, {len(todo)} to do")
     cfg = dict(out=str(out), tmp=str(tmp), tools=args.tools, skullstrip=args.skullstrip,
                template=str(tpl), template_mask=str(tpl_mask),
-               box=[tuple(b) for b in crop_info["box_1mm"]], target=crop_info["target_shape"])
+               box=[tuple(b) for b in crop_info["box_1mm"]], target=crop_info["target_shape"],
+               reg_spacing=args.reg_spacing)
     failed = []
     stopped = False
     with Pool(args.workers, initializer=_init, initargs=(cfg,), maxtasksperchild=20) as pool:

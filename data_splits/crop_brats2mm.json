@@ -1,0 +1,59 @@
+{
+  "signature": "brats2021-2mm-wholevol-v1",
+  "box_1mm": [
+    [
+      38,
+      216
+    ],
+    [
+      10,
+      230
+    ],
+    [
+      0,
+      156
+    ]
+  ],
+  "pooled_shape": [
+    89,
+    110,
+    78
+  ],
+  "target_shape": [
+    96,
+    112,
+    80
+  ],
+  "pad": "end",
+  "pool": "2x brain-masked mean, re-zero if brain fraction < 0.5",
+  "label_pool": "per-region mean >= 0.5, nesting ET<=TC<=WT enforced",
+  "axcodes": "LPS",
+  "affine_example": [
+    [
+      -1.0,
+      -0.0,
+      -0.0,
+      0.0
+    ],
+    [
+      -0.0,
+      -1.0,
+      -0.0,
+      239.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "box_from": "union of train+val brain boxes",
+  "n_box_cases": 1063
+}

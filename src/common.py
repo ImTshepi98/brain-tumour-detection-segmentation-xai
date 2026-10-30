@@ -55,21 +55,35 @@ def union_bbox(boxes):
 
 
 def pad_box_to_even(box, shape):
-    """Grow each (lo, hi) so its length is even, staying inside shape."""
+    """Grow each (lo, hi) so its length is even: inside shape if possible, otherwise one
+    voxel past the end (crop() zero-fills it)."""
     out = []
     for (lo, hi), n in zip(box, shape):
         if (hi - lo) % 2:
             if hi < n:
                 hi += 1
-            else:
+            elif lo > 0:
                 lo -= 1
+            else:
+                hi += 1
         out.append((lo, hi))
     return out
 
 
 def crop(arr, box):
-    sl = tuple(slice(lo, hi) for lo, hi in box)
-    return arr[(Ellipsis,) + sl]
+    """Crop the last len(box) axes to box; parts of the box outside the array are zero-filled."""
+    arr = np.asarray(arr)
+    k = len(box)
+    shape = arr.shape[-k:]
+    pads = [(0, 0)] * (arr.ndim - k)
+    sl = []
+    for (lo, hi), n in zip(box, shape):
+        assert lo >= 0, box
+        pads.append((0, max(0, hi - n)))
+        sl.append(slice(lo, hi))
+    if any(p[1] for p in pads):
+        arr = np.pad(arr, pads)
+    return arr[(Ellipsis,) + tuple(sl)]
 
 
 def _blocks(a):

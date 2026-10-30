@@ -83,3 +83,12 @@ def test_prep_end_to_end_synthetic(tmp_path):
                        "--stats", str(src / "modality_stats.csv"), "--out", str(out),
                        "--expected-shape", "32", "32", "24", "--workers", "2"])
     assert summ2["complete"] and summ2["n_done"] == 6
+
+
+def test_even_box_when_brain_fills_axis():
+    # regression: z box (0, 155) on a 155-slice volume used to become (-1, 155)
+    box = C.pad_box_to_even([(38, 216), (10, 230), (0, 155)], (240, 240, 155))
+    assert box == [(38, 216), (10, 230), (0, 156)]
+    a = np.ones((2, 4, 4, 5), np.float32)
+    c = C.crop(a, C.pad_box_to_even([(0, 4), (0, 4), (0, 5)], (4, 4, 5)))
+    assert c.shape == (2, 4, 4, 6) and c[..., 5].sum() == 0 and c[..., :5].min() == 1

@@ -18,12 +18,16 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import sys
 import time
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import numpy as np
 from scipy import ndimage as ndi
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from common import shared_mask  # noqa: E402
 
 SEED = 42
 NBINS, HRANGE = 32, (-3.0, 5.0)
@@ -34,6 +38,7 @@ BALL = ndi.generate_binary_structure(3, 1)
 
 # populated in workers by _init
 _REF = None
+_BORDER = None
 
 
 def regions(x, y, fill):
@@ -132,12 +137,14 @@ def quantiles(x, y):
 def _load(job):
     x = np.load(job["x"])
     y = np.load(job["y"]) if job.get("y") else None
+    if _BORDER is not None:  # one SynthStrip boundary for both cohorts (common.shared_mask)
+        x, _ = shared_mask(x, np.load(job["sdt"]), _BORDER, y)
     return x, y
 
 
-def _init(ref):
-    global _REF
-    _REF = ref
+def _init(ref, border=None):
+    global _REF, _BORDER
+    _REF, _BORDER = ref, border
 
 
 def task_pass1(job):
@@ -152,11 +159,11 @@ def task_pass2(job):
             features(x, y, fill=True, match_all=_REF))
 
 
-def run_pool(fn, jobs, workers, ref=None):
+def run_pool(fn, jobs, workers, ref=None, border=None):
     if workers <= 1:
-        _init(ref)
+        _init(ref, border)
         return [fn(j) for j in jobs]
-    with ProcessPoolExecutor(workers, initializer=_init, initargs=(ref,)) as ex:
+    with ProcessPoolExecutor(workers, initializer=_init, initargs=(ref, border)) as ex:
         return list(ex.map(fn, jobs, chunksize=4))
 
 
@@ -228,6 +235,9 @@ def main(argv=None):
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--threshold", type=float, default=0.80)
     ap.add_argument("--limit", type=int, default=0, help="per source, for smoke runs")
+    ap.add_argument("--border", type=float, default=None,
+                    help="apply the shared SynthStrip boundary at this border (mm); needs sdt/ maps")
+    ap.add_argument("--brats-sdt-dirs", nargs="*", default=[], help="dirs with sdt/<BraTS>.npy")
     args = ap.parse_args(argv)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -242,11 +252,16 @@ def main(argv=None):
             continue  # test split locked
         if r["source"] == "brats":
             if (bd / "x" / f"{s}.npy").exists():
-                jobs.append(dict(subject=s, source="brats", x=str(bd / "x" / f"{s}.npy"), y=str(bd / "y" / f"{s}.npy")))
+                sd = next((str(Path(d) / "sdt" / f"{s}.npy") for d in args.brats_sdt_dirs
+                           if (Path(d) / "sdt" / f"{s}.npy").exists()), None)
+                jobs.append(dict(subject=s, source="brats", x=str(bd / "x" / f"{s}.npy"),
+                                 y=str(bd / "y" / f"{s}.npy"), sdt=sd))
         else:
             for d in map(Path, args.ixi_dirs):
                 if (d / "x" / f"{s}.npy").exists():
-                    jobs.append(dict(subject=s, source="ixi", x=str(d / "x" / f"{s}.npy"), y=None))
+                    sd = d / "sdt" / f"{s}.npy"
+                    jobs.append(dict(subject=s, source="ixi", x=str(d / "x" / f"{s}.npy"), y=None,
+                                     sdt=str(sd) if sd.exists() else None))
                     break
     if args.limit:
         jobs = [j for j in jobs if j["source"] == "brats"][: args.limit] + \
@@ -255,13 +270,16 @@ def main(argv=None):
     n_i = len(jobs) - n_b
     expect_b = sum(r["source"] == "brats" and r["split"] != "test" for r in sp.values())
     expect_i = sum(r["source"] == "ixi" and r["split"] != "test" for r in sp.values())
-    print(f"jobs: brats {n_b}/{expect_b}, ixi {n_i}/{expect_i}", flush=True)
+    print(f"jobs: brats {n_b}/{expect_b}, ixi {n_i}/{expect_i}, border {args.border}", flush=True)
+    if args.border is not None:
+        missing = [j["subject"] for j in jobs if not j["sdt"]]
+        assert not missing, f"no sdt for {len(missing)} subjects, e.g. {missing[:3]}"
     subjects = [j["subject"] for j in jobs]
     label = np.array([j["source"] == "brats" for j in jobs], int)
     sites = np.array([sp[s]["site"] for s in subjects])
     meta = [dict(source=j["source"], split=sp[j["subject"]]["split"], site=sp[j["subject"]]["site"]) for j in jobs]
 
-    p1 = run_pool(task_pass1, jobs, args.workers)
+    p1 = run_pool(task_pass1, jobs, args.workers, border=args.border)
     base = [r[1] for r in p1]
     print(f"pass1 done {time.time() - t0:.0f}s", flush=True)
     train_brats = [i for i, j in enumerate(jobs) if j["source"] == "brats" and sp[j["subject"]]["split"] == "train"]
@@ -269,13 +287,13 @@ def main(argv=None):
     np.savez(out / "reference_quantiles.npz", **ref, qs=QS)
     write_csv(out / "features_base.csv", subjects, base, meta)
 
-    results = dict(n_brats=n_b, n_ixi=n_i, expected_brats=expect_b, expected_ixi=expect_i,
+    results = dict(border=args.border, n_brats=n_b, n_ixi=n_i, expected_brats=expect_b, expected_ixi=expect_i,
                    threshold=args.threshold, reference_from=f"{len(train_brats)} BraTS train subjects")
     results["base"], oofs = evaluate(base, label, sites)
     print("base", {k: round(v["auc_mean"], 3) for k, v in results["base"].items()}, flush=True)
     iterations = []
     if results["base"]["plan"]["auc_mean"] > args.threshold:
-        p2 = run_pool(task_pass2, jobs, args.workers, ref)
+        p2 = run_pool(task_pass2, jobs, args.workers, ref, args.border)
         print(f"pass2 done {time.time() - t0:.0f}s", flush=True)
         for it, k in (("it1", 1), ("it2", 2)):
             feats = [r[k] for r in p2]

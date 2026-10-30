@@ -65,3 +65,23 @@ def test_histogram_match_maps_to_reference():
     ref = np.quantile(rng.normal(0, 1, 5000), qc_domain.QS)
     m = qc_domain.match(img, mask, ref)
     assert abs(np.median(m) - np.median(ref)) < 0.05 and np.all(np.diff(m.ravel()[np.argsort(img.ravel())]) >= -1e-6)
+
+
+def test_qc_domain_shared_mask(tmp_path):
+    bd, idir, sp = _write(tmp_path, n=6)
+    sdt_b = tmp_path / "sdt_b"
+    (sdt_b / "sdt").mkdir(parents=True)
+    (idir / "sdt").mkdir()
+    for d, xd in ((sdt_b / "sdt", bd / "x"), (idir / "sdt", idir / "x")):
+        for p in xd.glob("*.npy"):
+            brain = (np.load(p) != 0).any(0)
+            from scipy import ndimage as ndi
+            sdt = 2.0 * (ndi.distance_transform_edt(~brain) - ndi.distance_transform_edt(brain))
+            np.save(d / p.name, sdt.astype(np.float16))
+    out = tmp_path / "out"
+    res = qc_domain.main(["--brats-dir", str(bd), "--ixi-dirs", str(idir), "--splits", str(sp),
+                          "--brats-sdt-dirs", str(sdt_b), "--border", "-2",
+                          "--out", str(out), "--workers", "1"])
+    assert res["border"] == -2 and res["n_brats"] == 6 and res["n_ixi"] == 6
+    base = {r["subject"]: r for r in csv.DictReader(open(out / "features_base.csv"))}
+    assert float(base["IXI000"]["shape_brain_ml"]) > 0

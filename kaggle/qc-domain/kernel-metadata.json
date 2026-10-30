@@ -8,7 +8,17 @@
   "enable_gpu": false,
   "enable_tpu": false,
   "enable_internet": false,
-  "dataset_sources": ["leweletp/brats-dual-code"],
+  "dataset_sources": [
+    "leweletp/brats-dual-code"
+  ],
   "competition_sources": [],
-  "kernel_sources": ["leweletp/brats-dual-prep-brats-2mm", "leweletp/brats-dual-prep-ixi-s0", "leweletp/brats-dual-prep-ixi-s1", "leweletp/brats-dual-prep-ixi-s2"]
+  "kernel_sources": [
+    "leweletp/brats-dual-prep-brats-2mm",
+    "leweletp/brats-dual-prep-ixi-s0",
+    "leweletp/brats-dual-prep-ixi-s1",
+    "leweletp/brats-dual-prep-ixi-s2",
+    "leweletp/brats-dual-sdt-brats-s0",
+    "leweletp/brats-dual-sdt-brats-s1",
+    "leweletp/brats-dual-sdt-brats-s2"
+  ]
 }

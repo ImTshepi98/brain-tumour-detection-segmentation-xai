@@ -3,7 +3,7 @@ import subprocess, sys, shutil
 from pathlib import Path
 
 SHARD, NSHARDS = 1, 3
-EXTRA = ["--limit", "4"]
+EXTRA = []
 subprocess.run([sys.executable, "-m", "pip", "install", "-q", "antspyx==0.6.3", "surfa==0.6.3"], check=True)
 CODE = next(p.parent for p in Path("/kaggle/input").rglob("sdt_brats.py"))
 DATA = CODE.parent / "data"

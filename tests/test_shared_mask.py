@@ -68,3 +68,10 @@ def test_sdt_brats_end_to_end(tmp_path):
         assert d.shape == x.shape[1:]
         rec = json.loads((out / "rows" / f"{subj}.json").read_text())
         assert rec["ss_ml_b-4"] <= rec["ss_ml_b+1"] and 0 <= rec["frac_inside_b-2"] <= 1
+
+
+def test_pick_border_rule():
+    import calibrate_border as cb
+    rows = [{f"frac_inside_b{b:+d}": v for b, v in zip(cb.BORDERS, (0.97, 0.992, 0.997, 0.999, 1, 1))}] * 3
+    assert cb.pick_border(rows)[0] == 0
+    assert cb.pick_border(rows, 0.998)[0] == -2

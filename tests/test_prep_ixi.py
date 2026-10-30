@@ -35,8 +35,13 @@ def test_prep_ixi_end_to_end_synthetic(tmp_path):
     for s in subs:
         for mod, sc in (("T1", 1.0), ("T2", 0.7)):
             aff = np.diag([1.1, 1.1, 1.3, 1.0])
-            nib.save(nib.Nifti1Image(_fake_head((30, 30, 22), rng, sc), aff),
-                     ixi_root / f"{s}-Guys-0828-{mod}.nii.gz")
+            # real layout: '<name>.nii' is a directory holding the NIfTI file (IXI012 uses it)
+            dest = ixi_root / f"{s}-Guys-0828-{mod}.nii.gz"
+            if s == "IXI012":
+                d = ixi_root / f"{s}-Guys-0828-{mod}.nii"
+                d.mkdir()
+                dest = d / f"{s}-Guys-0828-SCAN-{mod}.nii"
+            nib.save(nib.Nifti1Image(_fake_head((30, 30, 22), rng, sc), aff), dest)
     splits = tmp_path / "splits.csv"
     with open(splits, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["subject", "id", "source", "site", "split", "label", "has_seg"])

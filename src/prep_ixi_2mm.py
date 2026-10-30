@@ -216,11 +216,18 @@ def _init(cfg):
 
 
 def list_ixi(root):
+    """subject -> {T1, T2: file}. In mdnakib/ixi-dataset (and the HF zip) each
+    'IXInnn-Site-nnnn-T1.nii' is a directory holding the actual NIfTI file."""
     files = {}
     for f in sorted(Path(root).rglob("IXI*.nii*")):
         m = re.match(r"(IXI\d{3})-([A-Za-z]+)-\d+-(T1|T2)\.nii", f.name)
-        if m:
-            files.setdefault(m.group(1), {})[m.group(3)] = str(f)
+        if not m:
+            continue
+        if f.is_dir():
+            inner = sorted(p for p in f.rglob("*.nii*") if p.is_file())
+            assert len(inner) == 1, (str(f), [p.name for p in inner])
+            f = inner[0]
+        files.setdefault(m.group(1), {})[m.group(3)] = str(f)
     return files
 
 

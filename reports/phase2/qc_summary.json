@@ -1,0 +1,45 @@
+{
+  "expected": 577,
+  "passed_arrays": 577,
+  "failed": 0,
+  "missing": 0,
+  "flagged": 34,
+  "accept_500": true,
+  "fail_rate": 0.0,
+  "median_t_total": 134.5,
+  "median_mask_dice": 0.9574901434289744,
+  "by_split": {
+    "train": 404,
+    "val": 86,
+    "test": 87
+  },
+  "panels_ixi": [
+    "IXI353",
+    "IXI288",
+    "IXI174",
+    "IXI549",
+    "IXI121",
+    "IXI315",
+    "IXI491",
+    "IXI259",
+    "IXI238",
+    "IXI652",
+    "IXI093",
+    "IXI025"
+  ],
+  "panels_brats": [
+    "BraTS2021_00100",
+    "BraTS2021_00504",
+    "BraTS2021_01323",
+    "BraTS2021_00316",
+    "BraTS2021_01347",
+    "BraTS2021_01121",
+    "BraTS2021_00008",
+    "BraTS2021_01173",
+    "BraTS2021_01639",
+    "BraTS2021_01652",
+    "BraTS2021_00356",
+    "BraTS2021_00628"
+  ],
+  "visual_review_complete": false
+}

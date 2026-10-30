@@ -1,0 +1,11 @@
+{
+  "signature": "ixi-bratslike-2mm-v1",
+  "shard": 2,
+  "nshards": 3,
+  "n_jobs": 192,
+  "n_done": 192,
+  "n_failed_this_run": 0,
+  "stopped_early": false,
+  "elapsed_s": 6435,
+  "median_t_total": 128.0
+}

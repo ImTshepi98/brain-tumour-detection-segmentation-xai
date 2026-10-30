@@ -1,0 +1,35 @@
+subject,split,site,reasons
+IXI012,train,HH,t1_template_corr=0.49995336201000784
+IXI020,train,Guys,owner_eligibility_excluded
+IXI033,train,HH,t1_template_corr=0.49699982051475483
+IXI039,val,HH,t1_template_corr=0.4977802845058785
+IXI083,train,HH,t1_template_corr=0.4802935326841172
+IXI095,test,HH,t1_template_corr=0.48701149136711713
+IXI132,train,HH,t1_template_corr=0.4952595487226697
+IXI136,train,HH,t1_template_corr=0.48510442729059533
+IXI159,train,HH,t1_template_corr=0.46341635080230414
+IXI165,test,HH,t1_template_corr=0.49716904312249904
+IXI173,train,HH,t1_template_corr=0.4939430557564141
+IXI175,test,HH,t1_template_corr=0.4789113964137943
+IXI176,train,HH,t1_template_corr=0.4794460351048793
+IXI202,train,HH,t1_template_corr=0.48716619125306354
+IXI205,train,HH,t1_template_corr=0.48521008055560466
+IXI210,train,Guys,owner_eligibility_excluded
+IXI212,test,HH,t1_template_corr=0.4545883997744968
+IXI214,train,HH,t1_template_corr=0.49173254606419003
+IXI263,test,HH,t1_template_corr=0.4816303491194525
+IXI326,train,Guys,owner_eligibility_excluded
+IXI362,val,HH,t1_template_corr=0.49390400848589144
+IXI445,train,HH,owner_eligibility_excluded
+IXI451,train,HH,"warped_brain_ml=1675 (median 1579, MAD 28)"
+IXI457,train,Guys,"native_brain_ml=2105 (median 1519, MAD 168)"
+IXI504,train,Guys,owner_eligibility_excluded
+IXI526,train,HH,"warped_brain_ml=1694 (median 1579, MAD 28)"
+IXI544,train,HH,"warped_brain_ml=1668 (median 1579, MAD 28)"
+IXI556,train,HH,t1_template_corr=0.4896878863271415; owner_eligibility_excluded
+IXI584,val,Guys,owner_eligibility_excluded
+IXI585,train,Guys,owner_eligibility_excluded
+IXI611,val,HH,t1_template_corr=0.4954700723282526
+IXI626,train,Guys,owner_eligibility_excluded
+IXI642,val,Guys,owner_eligibility_excluded
+IXI652,train,Guys,owner_eligibility_excluded

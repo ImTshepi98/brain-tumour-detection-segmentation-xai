@@ -112,9 +112,15 @@ def main(argv=None):
     for d in map(Path, args.ixi_dirs):
         for p in (d / "rows").glob("*.json"):
             r = json.loads(p.read_text())
-            if (d / "x" / f"{r['subject']}.npy").exists():
-                recs[r["subject"]] = r
+            # a row is written only after its array is saved (x_sha256), so arrays may stay on Kaggle;
+            # any array present locally is checked against its hash
+            xp = d / "x" / f"{r['subject']}.npy"
+            if xp.exists():
+                x16 = np.load(xp)
+                if hashlib.sha256(x16.tobytes()).hexdigest()[:16] != r.get("x_sha256"):
+                    raise ValueError(f"x_sha256 mismatch for {r['subject']}")
                 xdir[r["subject"]] = d / "x"
+            recs[r["subject"]] = r
         if (d / "failed.jsonl").exists():
             for line in (d / "failed.jsonl").read_text().splitlines():
                 fr = json.loads(line)
@@ -145,7 +151,7 @@ def main(argv=None):
         w.writeheader()
         w.writerows(rl)
     # panels: 12 IXI (train/val only) + 12 BraTS (train/val only); test stays unseen
-    ixi_tv = [s for s in recs if split_rows[s]["split"] != "test"]
+    ixi_tv = [s for s in recs if split_rows[s]["split"] != "test" and s in xdir]
     brats_tv = [p.stem for p in Path(args.brats_dir, "x").glob("*.npy")
                 if split_rows.get(p.stem, {}).get("split") in ("train", "val")]
     ixi_pick = [(s, np.load(xdir[s] / f"{s}.npy")) for s in pick(ixi_tv, 12, "ixi")]

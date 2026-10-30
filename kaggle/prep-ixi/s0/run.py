@@ -1,9 +1,9 @@
-"""Phase 2 kernel (shard 0 of 1): IXI -> BraTS-like 2 mm arrays."""
+"""Phase 2 kernel (shard 0 of 3): IXI -> BraTS-like 2 mm arrays."""
 import subprocess, sys, shutil
 from pathlib import Path
 
-SHARD, NSHARDS = 0, 1
-EXTRA = ["--limit", "4"]
+SHARD, NSHARDS = 0, 3
+EXTRA = []
 subprocess.run([sys.executable, "-m", "pip", "install", "-q", "antspyx==0.6.3", "surfa==0.6.3"], check=True)
 CODE = next(p.parent for p in Path("/kaggle/input").rglob("prep_ixi_2mm.py"))
 DATA = CODE.parent / "data"

@@ -13,7 +13,11 @@ Template: mean of brain-mean-normalised T1 over N BraTS *train* cases on their n
 (already co-registered SRI24) grid, tumour (WT) voxels excluded from the average;
 template mask = voxels that are brain in >= 50% of those cases.
 
-Outputs (OUT): x/<IXInnn>.npy, rows/<IXInnn>.json (QC metrics), failed.jsonl,
+v2: also writes sdt/<IXInnn>.npy, SynthStrip's signed distance map (mm, negative inside)
+warped and pooled onto the same 2 mm grid, so one SynthStrip boundary can be applied to
+BraTS and IXI alike (common.shared_mask). x is unchanged from v1 (default 1 mm border).
+
+Outputs (OUT): x/<IXInnn>.npy, sdt/<IXInnn>.npy, rows/<IXInnn>.json (QC metrics), failed.jsonl,
 template_t1.nii.gz, template_mask.nii.gz, summary_shard<k>.json.
 IXI cases have no labels: no y file (datasets.py creates zeros from has_seg=0).
 """
@@ -43,9 +47,10 @@ import nibabel as nib  # noqa: E402
 import numpy as np  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import SEED, crop, pad_to, pool_image, seg_to_bits, zscore_nonzero  # noqa: E402,F401
+from common import SDT_FILL, SEED, crop, pad_to, pool_image, pool_sdt, seg_to_bits, zscore_nonzero  # noqa: E402,F401
 
-SIGNATURE = "ixi-bratslike-2mm-v1"
+SIGNATURE = "ixi-bratslike-2mm-v2-sdt"
+BORDERS = (1, 0, -1, -2, -3, -4)  # mm, SynthStrip boundary offsets reported per subject
 SYNTHSTRIP_SHA = {"mri_synthstrip.py": "291c253ab2f7c0cbcb84afa769ae10909549537e727db5b92d268754b7cc7871",
                   "synthstrip.1.pt": "37417f802196186441aae3e7f385d94f8a98c64a88acaeaa2723af995c653e33"}
 CFG = {}
@@ -113,16 +118,24 @@ def build_template(tar_path, subjects, expected_shape, out_dir):
 
 
 # ---------------------------------------------------------------- per subject
-def skullstrip(t1_path, mask_path, tmp):
+def skullstrip(t1_path, mask_path, tmp, sdt_path=None):
+    """SynthStrip brain mask (default 1 mm border); optionally also its signed distance map."""
     if CFG["skullstrip"] == "threshold":  # debug only (no SynthStrip locally)
+        from scipy import ndimage as ndi
         img = nib.load(t1_path)
         a = np.asarray(img.dataobj, np.float32)
-        m = (a > np.percentile(a[a > 0], 30)).astype(np.uint8)
-        nib.save(nib.Nifti1Image(m, img.affine), mask_path)
+        m = a > np.percentile(a[a > 0], 30)
+        nib.save(nib.Nifti1Image(m.astype(np.uint8), img.affine), mask_path)
+        if sdt_path:
+            sp = np.abs(np.diag(img.affine)[:3])
+            sdt = ndi.distance_transform_edt(~m, sp) - ndi.distance_transform_edt(m, sp)
+            nib.save(nib.Nifti1Image(sdt.astype(np.float32), img.affine), sdt_path)
         return
     tools = Path(CFG["tools"])
     cmd = [sys.executable, str(tools / "mri_synthstrip.py"), "-i", str(t1_path), "-m", str(mask_path),
            "--model", str(tools / "synthstrip.1.pt"), "-t", "1"]
+    if sdt_path:
+        cmd += ["-d", str(sdt_path)]
     r = subprocess.run(cmd, capture_output=True, text=True, timeout=900, cwd=tmp)
     if r.returncode != 0:
         raise RuntimeError("synthstrip failed: " + r.stderr[-500:])
@@ -152,12 +165,14 @@ def process_subject(job):
     with tempfile.TemporaryDirectory(dir=CFG["tmp"]) as tmp:
         tmp = Path(tmp)
         mask_path = tmp / "mask.nii.gz"
-        skullstrip(t1_path, mask_path, tmp)
+        sdt_path = tmp / "sdt.nii.gz"
+        skullstrip(t1_path, mask_path, tmp, sdt_path)
         rec["t_skullstrip"] = round(time.time() - t0, 1)
         t1 = ants.image_read(str(t1_path))
         t2 = ants.image_read(str(t2_path))
         mask = ants.image_read(str(mask_path))
         mask = ants.resample_image_to_target(mask, t1, interp_type="nearestNeighbor")
+        sdt = ants.resample_image_to_target(ants.image_read(str(sdt_path)), t1, interp_type="linear")
         sp = np.prod(t1.spacing)
         rec["native_brain_ml"] = float(mask.numpy().astype(bool).sum() * sp / 1000.0)
         rec["native_t1_spacing"] = [round(float(s), 3) for s in t1.spacing]
@@ -180,6 +195,10 @@ def process_subject(job):
             p = tmp / f"w_{name}.nii.gz"
             ants.image_write(wi, str(p))
             w[name] = np.asarray(nib.load(p).dataobj, np.float32)  # template voxel order = BraTS order
+        ws = ants.apply_transforms(fixed=tpl, moving=sdt, transformlist=tr, interpolator="linear",
+                                   defaultvalue=SDT_FILL)
+        ants.image_write(ws, str(tmp / "w_sdt.nii.gz"))
+        w["sdt"] = np.asarray(nib.load(tmp / "w_sdt.nii.gz").dataobj, np.float32)
         tmask = np.asarray(nib.load(CFG["template_mask"]).dataobj) > 0
         brain = w["mask"] > 0.5
         rec["mask_dice_template"] = dice(brain, tmask)
@@ -208,6 +227,10 @@ def process_subject(job):
     x16 = xp.astype(np.float16)
     assert np.isfinite(x16).all(), "fp16 overflow"
     np.save(out / "x" / f"{subject}.npy", x16)
+    sdt2 = pool_sdt(w["sdt"], box, CFG["target"]).astype(np.float16)
+    np.save(out / "sdt" / f"{subject}.npy", sdt2)
+    for b in BORDERS:
+        rec[f"brain_ml_b{b:+d}"] = float(((w["sdt"] < b) & brain).sum() / 1000.0)
     rec["x_sha256"] = hashlib.sha256(x16.tobytes()).hexdigest()[:16]
     rec["t_total"] = round(time.time() - t0, 1)
     (out / "rows" / f"{subject}.json").write_text(json.dumps(rec))
@@ -264,7 +287,7 @@ def main(argv=None):
     args = ap.parse_args(argv)
     t0 = time.time()
     out = Path(args.out)
-    for d in ("x", "rows"):
+    for d in ("x", "sdt", "rows"):
         (out / d).mkdir(parents=True, exist_ok=True)
     tmp = Path(args.tmp or out / "tmp")
     tmp.mkdir(parents=True, exist_ok=True)
@@ -294,7 +317,7 @@ def main(argv=None):
         jobs.append(dict(subject=r["subject"], site=r["site"], split=r["split"], t1=f["T1"], t2=f["T2"]))
     if args.limit:
         jobs = jobs[: args.limit]
-    done = {p.stem for p in (out / "rows").glob("*.json") if (out / "x" / f"{p.stem}.npy").exists()}
+    done = {p.stem for p in (out / "rows").glob("*.json") if (out / "sdt" / f"{p.stem}.npy").exists()}
     todo = [j for j in jobs if j["subject"] not in done]
     log(f"shard {args.shard}/{args.nshards}: {len(jobs)} subjects, {len(todo)} to do")
     cfg = dict(out=str(out), tmp=str(tmp), tools=args.tools, skullstrip=args.skullstrip,

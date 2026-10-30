@@ -128,3 +128,37 @@ def pad_to(arr, target):
 
 def round_up(n, m):
     return int(-(-n // m) * m)
+
+
+# ---------------------------------------------------------------- shared SynthStrip boundary
+SDT_FILL = 100.0  # distance value used outside the field of view / for padding (far outside)
+
+
+def pool_sdt(sdt, box, target):
+    """1 mm SynthStrip signed distance map (mm, negative inside) -> 2 mm grid of the arrays:
+    crop to the box (outside filled with SDT_FILL), 2x mean pool, pad with SDT_FILL."""
+    c = crop(np.asarray(sdt, np.float32) - SDT_FILL, box) + SDT_FILL
+    p = _blocks(c).mean(-1)
+    return pad_to(p - SDT_FILL, target) + SDT_FILL
+
+
+def shared_mask(x, sdt2, border, y=None):
+    """Apply one SynthStrip boundary to a 2 mm array: brain = (sdt2 < border) within the
+    existing support; for BraTS the tumour (WT, bit2) is always kept. Each channel is then
+    re-z-scored over its non-zero voxels inside the new brain (owner's formula, at 2 mm).
+    Returns (x_new float32, brain bool)."""
+    x = np.asarray(x, np.float32)
+    support = (x != 0).any(0)
+    brain = support & (np.asarray(sdt2, np.float32) < border)
+    if y is not None:
+        brain |= support & ((np.asarray(y) & 4) > 0)
+    out = np.zeros_like(x)
+    for c in range(x.shape[0]):
+        v = x[c][brain]
+        nz = v != 0
+        if nz.any():
+            z, _, _ = zscore_nonzero(v[nz])
+            vv = np.zeros_like(v)
+            vv[nz] = z
+            out[c][brain] = vv
+    return out, brain

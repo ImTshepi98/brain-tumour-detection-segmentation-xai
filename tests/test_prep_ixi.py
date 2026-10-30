@@ -69,6 +69,10 @@ def test_prep_ixi_end_to_end_synthetic(tmp_path):
         assert not x[1].any() and not x[3].any() and x[0].any() and x[2].any()
         rec = json.loads((out / "rows" / f"{s}.json").read_text())
         assert rec["mask_dice_template"] > 0.3
+        sdt = np.load(out / "sdt" / f"{s}.npy").astype(np.float32)
+        brain = (x != 0).any(0)
+        assert sdt.shape == x.shape[1:] and np.median(sdt[brain]) < 0 and sdt[~brain].min() > -3
+        assert rec["brain_ml_b-2"] < rec["brain_ml_b+1"]
     # resume: nothing left to do
     assert prep_i.main(["--ixi-root", str(ixi_root), "--splits", str(splits), "--crop", str(bout / "crop.json"),
                         "--brats-tar", str(src / "BraTS2021_Training_Data.tar"), "--skullstrip", "threshold",

@@ -12,3 +12,4 @@ streamlit
 pyyaml
 pytest
 huggingface_hub
+xlrd

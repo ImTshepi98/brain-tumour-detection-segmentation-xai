@@ -1,0 +1,11 @@
+[{"stream_name":"stdout","time":66.179734578,"data":"brats subjects in tar: 1251 (65s)\n"}
+,{"stream_name":"stdout","time":69.816486634,"data":"ixi files: 1737; paired T1+T2 subjects: 577\n"}
+,{"stream_name":"stdout","time":72.826280294,"data":"{'url': 'http://biomedic.doc.ic.ac.uk/brain-development/downloads/IXI/IXI.xls', 'bytes': 210432, 'fetched_utc': '2026-10-30T14:15:47Z'}\n"}
+,{"stream_name":"stdout","time":72.826324514,"data":"done in 71s\n"}
+,{"stream_name":"stderr","time":75.720626968,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":75.720662918,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":76.364799481,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":76.364836691,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":79.043505541,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":80.696765273,"data":"[NbConvertApp] Writing 286722 bytes to __results__.html\n"}
+]

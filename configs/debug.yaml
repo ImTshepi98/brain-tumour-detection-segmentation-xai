@@ -1,0 +1,9 @@
+# Local CPU dry runs (PLAN rule 3)
+seed: 42
+shape: [32, 32, 32]
+channels: [T1, T1ce, T2, FLAIR]
+n_brats: 6
+n_ixi: 6
+batch_size: 2
+epochs: 1
+max_minutes: 5

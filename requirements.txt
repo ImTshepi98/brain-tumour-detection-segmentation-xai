@@ -1,0 +1,14 @@
+kaggle==2.2.5
+torch  # CPU wheel locally: --index-url https://download.pytorch.org/whl/cpu
+monai
+nibabel
+numpy
+scipy
+scikit-learn
+scikit-image
+pandas
+matplotlib
+streamlit
+pyyaml
+pytest
+huggingface_hub

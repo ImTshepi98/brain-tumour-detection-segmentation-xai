@@ -1,0 +1,6 @@
+.venv/
+data_local/
+runs/
+legacy/**/output/
+__pycache__/
+*.pt

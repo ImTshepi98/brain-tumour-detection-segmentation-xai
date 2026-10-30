@@ -1,0 +1,9 @@
+seed: 42
+user: leweletp
+brats_dataset: dschettler8845/brats-2021-task1
+ixi_hf_repo: Joe0204/dataset-ixi
+ixi_hf_revision: 94862e0d6ce1234b1a63a49ac2b9af04020fbdeb
+ixi_fallback_dataset: mdnakib/ixi-dataset
+code_dataset: leweletp/brats-dual-code
+accelerator: NvidiaTeslaT4
+precision: fp32

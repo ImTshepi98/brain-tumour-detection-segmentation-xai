@@ -69,3 +69,16 @@ def test_prep_ixi_end_to_end_synthetic(tmp_path):
                         "--brats-tar", str(src / "BraTS2021_Training_Data.tar"), "--skullstrip", "threshold",
                         "--out", str(out), "--workers", "1", "--template-cases", "3",
                         "--expected-shape", *map(str, shape)])["n_done"] == 2
+
+
+def test_qc_flags():
+    import qc_ixi
+    recs = [dict(subject=f"IXI{i:03d}", warped_brain_ml=1400 + i, native_brain_ml=1300 + i, mask_dice_template=0.95,
+                 t1_template_corr=0.9, affine_det=1.0, brain_vox_outside_box=0, brain_vox_1mm=1000)
+            for i in range(20)]
+    recs[3]["warped_brain_ml"] = 3000
+    recs[5]["mask_dice_template"] = 0.6
+    recs[7]["affine_det"] = 2.0
+    r = qc_ixi.flag_rows(recs, {"IXI009"})
+    flagged = {s for s, v in r.items() if v}
+    assert flagged == {"IXI003", "IXI005", "IXI007", "IXI009"}

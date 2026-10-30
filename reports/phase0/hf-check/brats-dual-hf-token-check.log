@@ -1,0 +1,21 @@
+[{"stream_name":"stdout","time":2.817850817,"data":"{\n"}
+,{"stream_name":"stdout","time":2.817963342,"data":"  \"secret_attached\": false,\n"}
+,{"stream_name":"stdout","time":2.8179684480000002,"data":"  \"secret_error\": \"ConnectionError\",\n"}
+,{"stream_name":"stdout","time":2.8179712649999997,"data":"  \"Joe0204/dataset-ixi\": {\n"}
+,{"stream_name":"stdout","time":2.817973752,"data":"    \"revision\": \"94862e0d6ce1234b1a63a49ac2b9af04020fbdeb\",\n"}
+,{"stream_name":"stdout","time":2.81797646,"data":"    \"dataset_status\": \"RepositoryNotFoundError http=401\",\n"}
+,{"stream_name":"stdout","time":2.817979158,"data":"    \"model_status\": \"RepositoryNotFoundError http=401\"\n"}
+,{"stream_name":"stdout","time":2.81798194,"data":"  },\n"}
+,{"stream_name":"stdout","time":2.81798423,"data":"  \"Joe0204/brats-3d-unet-checkpoint\": {\n"}
+,{"stream_name":"stdout","time":2.817986652,"data":"    \"revision\": null,\n"}
+,{"stream_name":"stdout","time":2.817989061,"data":"    \"dataset_status\": \"RepositoryNotFoundError http=401\",\n"}
+,{"stream_name":"stdout","time":2.817991714,"data":"    \"model_status\": \"RepositoryNotFoundError http=401\"\n"}
+,{"stream_name":"stdout","time":2.8179944949999998,"data":"  }\n"}
+,{"stream_name":"stdout","time":2.817996776,"data":"}\n"}
+,{"stream_name":"stderr","time":5.378333285,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":5.378367119,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":5.709341242,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":5.709368033,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":7.34589059,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":8.489459978,"data":"[NbConvertApp] Writing 282092 bytes to __results__.html\n"}
+]

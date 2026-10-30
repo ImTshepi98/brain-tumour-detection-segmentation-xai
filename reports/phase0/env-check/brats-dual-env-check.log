@@ -1,0 +1,91 @@
+[{"stream_name":"stdout","time":25.411837421,"data":"{\n"}
+,{"stream_name":"stdout","time":25.411946291,"data":"  \"python\": \"3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]\",\n"}
+,{"stream_name":"stdout","time":25.411954244,"data":"  \"platform\": \"Linux-6.18.55+-x86_64-with-glibc2.39\",\n"}
+,{"stream_name":"stdout","time":25.411959097,"data":"  \"cpu_count\": 4,\n"}
+,{"stream_name":"stdout","time":25.411963316,"data":"  \"ver_numpy\": \"2.1.3\",\n"}
+,{"stream_name":"stdout","time":25.411967548,"data":"  \"ver_torch\": \"2.11.0+cpu\",\n"}
+,{"stream_name":"stdout","time":25.411971862,"data":"  \"ver_monai\": \"missing (ModuleNotFoundError)\",\n"}
+,{"stream_name":"stdout","time":25.411976132,"data":"  \"ver_nibabel\": \"5.4.2\",\n"}
+,{"stream_name":"stdout","time":25.411980573,"data":"  \"ver_scipy\": \"1.16.3\",\n"}
+,{"stream_name":"stdout","time":25.411984746999998,"data":"  \"ver_sklearn\": \"1.6.1\",\n"}
+,{"stream_name":"stdout","time":25.411988833,"data":"  \"ver_skimage\": \"0.25.2\",\n"}
+,{"stream_name":"stdout","time":25.411993016,"data":"  \"ver_SimpleITK\": \"2.5.6\",\n"}
+,{"stream_name":"stdout","time":25.411996844,"data":"  \"ver_ants\": \"missing (ModuleNotFoundError)\",\n"}
+,{"stream_name":"stdout","time":25.411999574,"data":"  \"ver_huggingface_hub\": \"1.29.0\",\n"}
+,{"stream_name":"stdout","time":25.412002206,"data":"  \"cuda\": false,\n"}
+,{"stream_name":"stdout","time":25.412004712,"data":"  \"meminfo\": [\n"}
+,{"stream_name":"stdout","time":25.412007367,"data":"    \"MemTotal:       32869296 kB\",\n"}
+,{"stream_name":"stdout","time":25.412010379,"data":"    \"MemFree:        27445248 kB\",\n"}
+,{"stream_name":"stdout","time":25.412014131,"data":"    \"MemAvailable:   31619052 kB\"\n"}
+,{"stream_name":"stdout","time":25.412017904,"data":"  ],\n"}
+,{"stream_name":"stdout","time":25.412021579,"data":"  \"disk_/kaggle/working\": {\n"}
+,{"stream_name":"stdout","time":25.412025218,"data":"    \"total_gb\": 21.0,\n"}
+,{"stream_name":"stdout","time":25.412029157,"data":"    \"free_gb\": 20.9\n"}
+,{"stream_name":"stdout","time":25.412033046,"data":"  },\n"}
+,{"stream_name":"stdout","time":25.412037364,"data":"  \"disk_/tmp\": {\n"}
+,{"stream_name":"stdout","time":25.412041202,"data":"    \"total_gb\": 8758.4,\n"}
+,{"stream_name":"stdout","time":25.412045109,"data":"    \"free_gb\": 1126.1\n"}
+,{"stream_name":"stdout","time":25.412048991,"data":"  },\n"}
+,{"stream_name":"stdout","time":25.412052541,"data":"  \"disk_/kaggle/input\": {\n"}
+,{"stream_name":"stdout","time":25.412056306,"data":"    \"total_gb\": 21.0,\n"}
+,{"stream_name":"stdout","time":25.412060038,"data":"    \"free_gb\": 20.9\n"}
+,{"stream_name":"stdout","time":25.412063795,"data":"  },\n"}
+,{"stream_name":"stdout","time":25.41206762,"data":"  \"input_layout\": {\n"}
+,{"stream_name":"stdout","time":25.412071423,"data":"    \"datasets\": {\n"}
+,{"stream_name":"stdout","time":25.412075205,"data":"      \"n_files\": 0,\n"}
+,{"stream_name":"stdout","time":25.412078968,"data":"      \"examples\": [],\n"}
+,{"stream_name":"stdout","time":25.412082727,"data":"      \"bytes_examples\": []\n"}
+,{"stream_name":"stdout","time":25.412086508,"data":"    },\n"}
+,{"stream_name":"stdout","time":25.412090146,"data":"    \"datasets/dschettler8845\": {\n"}
+,{"stream_name":"stdout","time":25.412093986,"data":"      \"n_files\": 0,\n"}
+,{"stream_name":"stdout","time":25.41209817,"data":"      \"examples\": [],\n"}
+,{"stream_name":"stdout","time":25.412100722,"data":"      \"bytes_examples\": []\n"}
+,{"stream_name":"stdout","time":25.412103296,"data":"    },\n"}
+,{"stream_name":"stdout","time":25.412114035,"data":"    \"datasets/dschettler8845/brats-2021-task1\": {\n"}
+,{"stream_name":"stdout","time":25.412118668,"data":"      \"n_files\": 3,\n"}
+,{"stream_name":"stdout","time":25.412122647,"data":"      \"examples\": [\n"}
+,{"stream_name":"stdout","time":25.412126485,"data":"        \"BraTS2021_00495.tar\",\n"}
+,{"stream_name":"stdout","time":25.412130567,"data":"        \"BraTS2021_Training_Data.tar\",\n"}
+,{"stream_name":"stdout","time":25.412134708,"data":"        \"BraTS2021_00621.tar\"\n"}
+,{"stream_name":"stdout","time":25.41213857,"data":"      ],\n"}
+,{"stream_name":"stdout","time":25.412142247,"data":"      \"bytes_examples\": [\n"}
+,{"stream_name":"stdout","time":25.412146047,"data":"        10321920,\n"}
+,{"stream_name":"stdout","time":25.412149665,"data":"        13396408320,\n"}
+,{"stream_name":"stdout","time":25.412153882,"data":"        10772480\n"}
+,{"stream_name":"stdout","time":25.412157282,"data":"      ]\n"}
+,{"stream_name":"stdout","time":25.412160469,"data":"    },\n"}
+,{"stream_name":"stdout","time":25.41216391,"data":"    \"datasets/mdnakib\": {\n"}
+,{"stream_name":"stdout","time":25.41216743,"data":"      \"n_files\": 0,\n"}
+,{"stream_name":"stdout","time":25.412171223,"data":"      \"examples\": [],\n"}
+,{"stream_name":"stdout","time":25.41217494,"data":"      \"bytes_examples\": []\n"}
+,{"stream_name":"stdout","time":25.412178756,"data":"    },\n"}
+,{"stream_name":"stdout","time":25.412182367,"data":"    \"datasets/mdnakib/ixi-dataset\": {\n"}
+,{"stream_name":"stdout","time":25.412186363,"data":"      \"n_files\": 0,\n"}
+,{"stream_name":"stdout","time":25.412190156,"data":"      \"examples\": [],\n"}
+,{"stream_name":"stdout","time":25.412192767,"data":"      \"bytes_examples\": []\n"}
+,{"stream_name":"stdout","time":25.412195567,"data":"    }\n"}
+,{"stream_name":"stdout","time":25.412199107,"data":"  },\n"}
+,{"stream_name":"stdout","time":25.412202721,"data":"  \"ixi_sites\": {\n"}
+,{"stream_name":"stdout","time":25.412206736,"data":"    \"HH\": 555,\n"}
+,{"stream_name":"stdout","time":25.412210349,"data":"    \"IOP\": 222,\n"}
+,{"stream_name":"stdout","time":25.412214562,"data":"    \"Guys\": 960\n"}
+,{"stream_name":"stdout","time":25.412218525,"data":"  },\n"}
+,{"stream_name":"stdout","time":25.412222556,"data":"  \"ixi_modality_counts\": {\n"}
+,{"stream_name":"stdout","time":25.412226391,"data":"    \"T2\": 578,\n"}
+,{"stream_name":"stdout","time":25.412230184,"data":"    \"PD\": 578,\n"}
+,{"stream_name":"stdout","time":25.412233892,"data":"    \"T1\": 581\n"}
+,{"stream_name":"stdout","time":25.412237618,"data":"  },\n"}
+,{"stream_name":"stdout","time":25.412241193,"data":"  \"ixi_paired_t1_t2\": 577,\n"}
+,{"stream_name":"stdout","time":25.41224506,"data":"  \"ixi_other_files\": [\n"}
+,{"stream_name":"stdout","time":25.412248879,"data":"    \"datasets/dschettler8845/brats-2021-task1/BraTS2021_00495.tar\",\n"}
+,{"stream_name":"stdout","time":25.41225315,"data":"    \"datasets/dschettler8845/brats-2021-task1/BraTS2021_Training_Data.tar\",\n"}
+,{"stream_name":"stdout","time":25.412257214,"data":"    \"datasets/dschettler8845/brats-2021-task1/BraTS2021_00621.tar\"\n"}
+,{"stream_name":"stdout","time":25.412261232,"data":"  ]\n"}
+,{"stream_name":"stdout","time":25.412264863,"data":"}\n"}
+,{"stream_name":"stderr","time":28.620255258,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":28.620290508,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":28.97602672,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":28.97605601,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":29.896586957,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":31.125029002,"data":"[NbConvertApp] Writing 289170 bytes to __results__.html\n"}
+]

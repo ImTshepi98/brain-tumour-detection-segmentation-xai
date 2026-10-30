@@ -1,0 +1,14 @@
+{
+  "id": "leweletp/brats-dual-split-ids",
+  "title": "brats-dual-split-ids",
+  "code_file": "split_ids.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": ["dschettler8845/brats-2021-task1", "mdnakib/ixi-dataset"],
+  "competition_sources": [],
+  "kernel_sources": []
+}

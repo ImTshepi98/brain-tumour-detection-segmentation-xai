@@ -4,3 +4,6 @@ runs/
 legacy/**/output/
 __pycache__/
 *.pt
+kaggle/_code_dataset/src/
+kaggle/_code_dataset/configs/
+kaggle/_code_dataset/GIT_COMMIT

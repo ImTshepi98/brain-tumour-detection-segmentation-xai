@@ -3,7 +3,7 @@
 # Usage: bash kaggle/sync_code.sh "message"
 set -euo pipefail
 cd "$(dirname "$0")/.."
-D=kaggle/_code_dataset
+D="$(cygpath -w "$PWD/kaggle/_code_dataset")"
 rm -rf "$D/src" "$D/configs"; cp -r src configs "$D/"
 find "$D" -name __pycache__ -prune -exec rm -rf {} +
 git rev-parse HEAD > "$D/GIT_COMMIT" 2>/dev/null || echo nogit > "$D/GIT_COMMIT"

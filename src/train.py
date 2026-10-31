@@ -18,6 +18,7 @@ val_best.json, done.json.
 from __future__ import annotations
 
 import argparse
+import gc
 import hashlib
 import json
 import math
@@ -144,6 +145,16 @@ def validate(net, val, cfg, device):
     det = metrics.detection([r["label"] for r in recs], [r["prob"] for r in recs]) if w_cls > 0 else {}
     score = metrics.selection_score(mean_dsc, det.get("f1", float("nan")), w_seg, w_cls)
     return recs, dict(dsc=dsc, mean_dsc=mean_dsc, detection=det, score=score)
+
+
+def host_rss_gb():
+    """Resident memory of this process in GiB (Linux only; None elsewhere)."""
+    try:
+        for line in open("/proc/self/status"):
+            if line.startswith("VmRSS:"):
+                return int(line.split()[1]) / 2**20
+    except OSError:
+        return None
 
 
 def save(path, state):
@@ -287,7 +298,8 @@ def main(argv=None):
             if t_first_step is None:
                 t_first_step = time.time() - t0
             if step < 2 or (step + 1) % 50 == 0:
-                print(f"epoch {epoch} step {step + 1}/{steps_per_epoch} loss {float(loss.detach()):.4f}", flush=True)
+                print(f"epoch {epoch} step {step + 1}/{steps_per_epoch} loss {float(loss.detach()):.4f} "
+                      f"rss {host_rss_gb() or 0:.2f} GB", flush=True)
         t_train = time.time() - te
         tv = time.time()
         recs, val_m = validate(net, val, cfg, device)
@@ -301,7 +313,7 @@ def main(argv=None):
                    **{f"val_{k}": v for k, v in val_m.items()}, best=best, improved=improved,
                    train_seconds=t_train, val_seconds=t_val, steps_per_second=steps_per_epoch / t_train,
                    gpu_peak_gb=(torch.cuda.max_memory_allocated() / 2**30) if device.type == "cuda" else None,
-                   elapsed_seconds=time.time() - t0)
+                   host_rss_gb=host_rss_gb(), elapsed_seconds=time.time() - t0)
         history.append(rec)
         with open(out / "metrics.jsonl", "a") as f:
             f.write(json.dumps(rec) + "\n")
@@ -314,6 +326,8 @@ def main(argv=None):
             save(out / "best.pt", state)
             (out / "val_best.json").write_text(json.dumps(recs, indent=1))
         print("EPOCH", json.dumps(rec), flush=True)
+        del recs, state
+        gc.collect()
 
     done = dict(stopped=stopped, epochs_completed=len(history), best=best, total_seconds=time.time() - t0,
                 data_load_seconds=t_load, first_step_seconds=t_first_step, protocol_hash=phash,

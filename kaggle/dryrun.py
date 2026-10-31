@@ -56,10 +56,14 @@ def kernel(maker, *a):
     return base / "working"
 
 
-w = kernel("kaggle/train/make_kernel.py", "dryrun", "main.yaml", "0", "5",
-           json.dumps(["model.channels=[4,8,16,32,64]", "batch_size=2", "data.workers=1", "optim.epochs=1"]))
-assert json.loads((w / "run/done.json").read_text())["epochs_completed"] == 1
-shutil.copytree(w, nb / "brats-dual-train-dryrun")  # whole output incl. src_used/, as Kaggle attaches it
+small = json.dumps(["model.channels=[4,8,16,32,64]", "batch_size=2", "data.workers=1", "optim.epochs=2"])
+w = kernel("kaggle/train/make_kernel.py", "dryrun", "main.yaml", "0", "0.0001", small)  # stops after epoch 0
+assert json.loads((w / "run/done.json").read_text())["stopped"] == "time_budget"
+shutil.copytree(w, nb / "brats-dual-train-dryrun-v1")  # whole output incl. src_used/, as Kaggle attaches it
+w = kernel("kaggle/train/make_kernel.py", "dryrun-r1", "main.yaml", "0", "5", small, "brats-dual-train-dryrun-v1")
+assert [json.loads(l)["epoch"] for l in (w / "run/metrics.jsonl").read_text().splitlines()] == [0, 1]
+shutil.rmtree(nb / "brats-dual-train-dryrun-v1")
+shutil.copytree(w, nb / "brats-dual-train-dryrun")
 w = kernel("kaggle/eval/make_kernel.py", "dryrun", "val", "--controls", "--cpu")
 assert (w / "eval/results_val.json").exists() and (w / "eval/xai/xai_metrics_val.md").exists()
 shutil.copytree(w, nb / "brats-dual-eval-dryrun-val")

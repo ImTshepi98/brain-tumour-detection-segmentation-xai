@@ -24,8 +24,12 @@ if prev:
     print("continuing from", prev[0], flush=True)
 if not DRY:
     subprocess.run(["nvidia-smi"], check=False)
+    subprocess.run(["free", "-g"], check=False)
+# main v1 was SIGKILLed (host RAM, flat GPU memory) at epoch 15; a fixed mmap threshold makes glibc
+# return the ~27 MB per-step batch buffers to the OS instead of fragmenting the heap
+env = dict(os.environ, MALLOC_MMAP_THRESHOLD_="1048576", MALLOC_ARENA_MAX="2")
 subprocess.run([sys.executable, "-u", str(CODE / "train.py"), "--config", str(CODE.parent / "configs/train" / CONFIG),
                 "--set", f"border={json.dumps(BORDER)}", *EXTRA,
                 "--brats-dir", str(brats), "--ixi-dirs", *ixi, "--brats-sdt-dirs", *sdt_b,
                 "--splits", str(DATA / "splits.csv"), "--out", str(out), "--max-minutes", str(MAX_MINUTES),
-                "--resume", "auto"] + (["--no-count-check"] if DRY else []), check=True)
+                "--resume", "auto"] + (["--no-count-check"] if DRY else []), check=True, env=env if not DRY else None)

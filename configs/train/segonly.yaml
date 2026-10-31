@@ -23,4 +23,4 @@ optim:
   weight_decay: 1.0e-5
   grad_clip: 1.0
   warmup_epochs: 0
-  epochs: 60            # placeholder: set from the smoke-test speed so the run fits its budget
+  epochs: 40            # smoke v2: 0.97 steps/s at batch 4 -> ~5.5 min/epoch -> ~3.7 h

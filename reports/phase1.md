@@ -27,3 +27,5 @@ Kernel `leweletp/brats-dual-prep-brats-2mm` **v3** (CPU, 4 workers, 3525 s), cod
 | ET empty at 2 mm | 27: 26 have no ET at 1 mm; **1 lost by pooling** (BraTS2021_01512, 32 ET voxels at 1 mm) | 7 (not inspected further) |
 
 Test-set note: test images were z-scored with their own non-zero-voxel statistics (the same formula) and stored with their labels. Only the aggregate counts above were computed; nothing was tuned on them.
+
+**Visual review:** OK, by the owner on 2026-10-31 (`visual_review_complete: true`).

@@ -47,7 +47,36 @@ The most important single feature (permutation importance) is **outer-shell T1 m
 - Added controls (logged in DECISIONS.md, no extra GPU training):
   - **Phase 6 tumour-removal control:** on BraTS **val**, the detection head's probability with the WT region replaced by mirrored contralateral tissue versus unmodified. A large drop means the model uses the tumour; little drop means it uses domain cues.
   - **Phase 6 boundary control:** the detection probability on IXI val after eroding the brain mask by 1 voxel (2 mm) to remove the CSF rim.
-- Preprocessing is **not changed now**. The arrays stay as produced in Phases 1–2: neither PLAN mitigation helped, and the plan does not allow a third iteration. One option is to re-strip IXI with a tighter mask, or to re-strip BraTS with SynthStrip so both cohorts share one skull-stripper, which would target cue 1 directly. It would cost a re-run of Phases 1–2 (about 3 CPU hours). It is offered as an option to the owner (PROGRESS.md), not done automatically.
+- Preprocessing was later changed by the owner's decision: see **Shared SynthStrip boundary (v2)** below.
 
 ## Age-only classifier (3d)
 Not possible: BraTS 2021 Task 1 has no per-case ages. BraTS ages are unavailable for all cases unless `survival_info.csv` from the BraTS 2020 survival task is supplied (USER ACTION 7, optional). The age distribution of the negatives is in `age_ixi.md`.
+
+## Shared SynthStrip boundary (v2, owner's re-strip decision)
+
+Kernel `leweletp/brats-dual-qc-domain` v3 (CPU, 2800 s; v2 failed on a wrapper bug, see DECISIONS.md). Same classifier, features, subjects (1063 BraTS, 490 IXI, train+val only) and mitigation steps as above, but both cohorts now use **one SynthStrip boundary at b = 0 mm** (`common.shared_mask`; border fixed by the pre-registered rule in `phase3/border_calibration.json`). Raw results in `phase3/shared_b0/`.
+
+| Feature set | Before | it1 | it2 |
+|---|---|---|---|
+| **Plan (decides 3c)** | **1.000** (pooled 0.9998) | **1.000** | **1.000** (pooled 0.9997) |
+| Plan + extended | 1.000 | 1.000 | 1.000 |
+| Histograms only | 1.000 | 1.000 | 0.994 |
+| Shape only | 0.987 | 0.988 | 0.988 |
+| Outer shell only | 0.987 | 0.993 | 0.978 |
+| Sharpness only | 0.957 | 0.945 | 0.961 |
+| Low-frequency bias only | 0.959 | 0.957 | 0.958 |
+
+Medians (tumour-free region, before mitigation), old masks -> shared boundary:
+
+| Feature | BraTS | IXI Guys | IXI HH | IXI IOP |
+|---|---|---|---|---|
+| Brain volume (mL) | 1480 -> 1449 | 1582 -> 1519 | 1610 -> 1544 | 1590 -> 1523 |
+| Outer-shell T1 mean (z) | -1.00 -> -0.95 | -1.36 -> -1.27 | -1.40 -> -1.28 | -1.29 -> -1.17 |
+| Outer-shell T2 mean (z) | 0.11 -> 0.19 | 0.02 -> 0.32 | -0.15 -> 0.10 | -0.56 -> -0.24 |
+| T1 quadratic bias fit R^2 | 0.17 -> 0.17 | 0.17 -> 0.14 | 0.45 -> 0.45 | 0.51 -> 0.50 |
+
+**Interpretation.**
+1. The shared boundary did what it was designed to do for the mask itself: the IXI-BraTS volume difference fell from about 100-130 mL to about 70-95 mL, and both cohorts' outer shells moved in the same direction. It did **not** reduce separability: the plan-feature AUROC stays at 1.000 and shape or shell features alone still reach 0.98-0.99.
+2. The strongest single cue is still the **outer-shell T1 mean** (IXI about 0.3 z darker). With the same stripper and border on both sides, this is no longer a mask-definition difference; it is a difference in the tissue just inside the boundary (likely more cortical CSF/partial volume in IXI after its extra resampling and affine registration, and different T1 sequences). Age may contribute (IXI spans 20-86 years), but BraTS has no ages to test this.
+3. Sharpness and bias remain site effects (HH/IOP), unchanged by the boundary.
+4. **Consequence (unchanged):** detection results cannot be read as tumour detection on their own. The Phase 6 controls (tumour mirroring, 1-voxel erosion) and the Phase 7 boundary-shell check are the evidence for what the detector uses. No further preprocessing changes are planned (PLAN allows two mitigation iterations; both ran again here).

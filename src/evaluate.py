@@ -354,6 +354,7 @@ def main(argv=None):
     ap.add_argument("--tag", default=None)
     ap.add_argument("--debug", action="store_true")
     ap.add_argument("--device", default=None)
+    ap.add_argument("--no-count-check", action="store_true", help="skip the real split counts (kernel dry runs)")
     args = ap.parse_args(argv)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -377,7 +378,7 @@ def main(argv=None):
         lock.write_text(json.dumps(dict(ckpt=str(args.ckpt), protocol_hash=st["protocol_hash"], epoch=st["epoch"],
                                         threshold=thr, time=time.strftime("%Y-%m-%d %H:%M:%S")), indent=2))
     rows = ds.read_splits(args.splits)
-    ds.check_splits(rows, None if args.debug else ds.EXPECTED)
+    ds.check_splits(rows, None if args.debug or args.no_count_check else ds.EXPECTED)
     cohort = ds.Cohort.load(rows, (args.split,), args.brats_dir, args.ixi_dirs, args.brats_sdt_dirs,
                             border=cfg["border"], allow_test=args.split == "test")
     ages = read_ages(args.ages)

@@ -147,6 +147,7 @@ def main(argv=None):
     ap.add_argument("--resume", default=None, help="path to last.pt, or 'auto' = <out>/last.pt if present")
     ap.add_argument("--debug", action="store_true", help="synthetic data, CPU, tiny (PLAN rule 3)")
     ap.add_argument("--device", default=None)
+    ap.add_argument("--no-count-check", action="store_true", help="skip the real split counts (kernel dry runs)")
     args = ap.parse_args(argv)
     t0 = time.time()
     out = Path(args.out)
@@ -163,7 +164,7 @@ def main(argv=None):
         expected = None
     else:
         cfg = load_config(args.config, args.set)
-        expected = ds.EXPECTED
+        expected = None if args.no_count_check else ds.EXPECTED
     border = cfg["border"]
     assert border is None or isinstance(border, (int, float)), \
         f"border must be set (mm, from calibrate_border.py) or null, got {border!r}"

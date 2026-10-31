@@ -4,7 +4,7 @@ import shutil, subprocess, sys
 from pathlib import Path
 
 INP = Path("/kaggle/input")
-CODE = next(p.parent for p in INP.rglob("qc_domain.py"))
+CODE = next(p.parent for p in INP.rglob("qc_domain.py") if "brats-dual-code" in p.parts)  # the code dataset only (attached kernel outputs carry old src_used/ copies)
 DATA = CODE.parent / "data"
 print("code", CODE, "commit", (CODE.parent / "GIT_COMMIT").read_text().strip(), flush=True)
 shutil.copytree(CODE, "/kaggle/working/src_used", dirs_exist_ok=True)

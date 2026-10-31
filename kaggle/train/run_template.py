@@ -9,7 +9,7 @@ if not DRY:
     subprocess.run([sys.executable, "-m", "pip", "install", "-q", "monai==1.6.1"], check=True)
 INP = Path(DRY, "input") if DRY else Path("/kaggle/input")
 WORK = Path(DRY, "working") if DRY else Path("/kaggle/working")
-CODE = next(p.parent for p in INP.rglob("train.py") if (p.parent / "datasets.py").exists())
+CODE = next(p.parent for p in INP.rglob("train.py") if "brats-dual-code" in p.parts)  # the code dataset only (attached kernel outputs carry old src_used/ copies)
 DATA = CODE.parent / "data"
 print("code", CODE, "commit", (CODE.parent / "GIT_COMMIT").read_text().strip(), flush=True)
 shutil.copytree(CODE, WORK / "src_used", dirs_exist_ok=True)

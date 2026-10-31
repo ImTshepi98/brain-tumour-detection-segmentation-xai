@@ -2,16 +2,20 @@
 val:  evaluate val (threshold = max F1 on val; controls if CONTROLS), Grad-CAM++ checks on all val cases.
 test: needs the val stage's output attached (results_val.json); evaluates test ONCE with the frozen
       threshold, Grad-CAM++ checks and overlays on test, and exports GUI cases if EXPORT."""
-import json, shutil, subprocess, sys
+import json, os, shutil, subprocess, sys
 from pathlib import Path
 
 RUN, STAGE, CONTROLS, EXPORT = "main", "test", False, True
-subprocess.run([sys.executable, "-m", "pip", "install", "-q", "monai==1.6.1"], check=True)
-INP = Path("/kaggle/input")
-CODE = next(p.parent for p in INP.rglob("evaluate.py") if (p.parent / "explain.py").exists())
+# BRATS_DUAL_DRYRUN=<dir>: local dry run against <dir>/input, writing to <dir>/working (PLAN rule 3)
+DRY = os.environ.get("BRATS_DUAL_DRYRUN")
+if not DRY:
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", "monai==1.6.1"], check=True)
+INP = Path(DRY, "input") if DRY else Path("/kaggle/input")
+WORK = Path(DRY, "working") if DRY else Path("/kaggle/working")
+CODE = next(p.parent for p in INP.rglob("evaluate.py") if "brats-dual-code" in p.parts)  # the code dataset only (attached kernel outputs carry old src_used/ copies)
 DATA = CODE.parent / "data"
 print("code", CODE, "commit", (CODE.parent / "GIT_COMMIT").read_text().strip(), flush=True)
-shutil.copytree(CODE, "/kaggle/working/src_used", dirs_exist_ok=True)
+shutil.copytree(CODE, WORK / "src_used", dirs_exist_ok=True)
 brats = next(p.parent for p in INP.rglob("brats2mm/crop.json"))
 ixi = sorted(str(p.parent) for p in INP.rglob("ixi2mm/template.json"))
 sdt_b = sorted(str(p.parent) for p in INP.rglob("sdt/summary_shard*.json"))
@@ -21,7 +25,8 @@ assert len(ckpt) == 1, f"attach exactly one brats-dual-train-{RUN} output: {ckpt
 ckpt = ckpt[0]
 DATA_ARGS = ["--brats-dir", str(brats), "--ixi-dirs", *ixi, "--brats-sdt-dirs", *sdt_b,
              "--splits", str(DATA / "splits.csv"), "--ages", str(DATA / "age_ixi.csv")]
-out = Path("/kaggle/working/eval")
+COUNT = ["--no-count-check"] if DRY else []
+out = WORK / "eval"
 out.mkdir(parents=True, exist_ok=True)
 shutil.copy(ckpt.parent / "metrics.jsonl", out / "train_metrics.jsonl")
 
@@ -31,7 +36,7 @@ def run(script, *a):
 
 
 if STAGE == "val":
-    run("evaluate.py", "--split", "val", "--out", str(out), *(["--controls"] if CONTROLS else []))
+    run("evaluate.py", "--split", "val", "--out", str(out), *COUNT, *(["--controls"] if CONTROLS else []))
     run("explain.py", "--split", "val", "--results", str(out / "results_val.json"),
         "--cases-csv", str(out / "cases_val.csv"), "--out", str(out / "xai"))
 else:
@@ -43,7 +48,7 @@ else:
         ckpt, map_location="cpu", weights_only=False)["protocol_hash"], "val results are from another checkpoint"
     shutil.copy(val[0], out / "results_val.json")
     run("evaluate.py", "--split", "test", "--confirm-test", "--threshold-from", str(out / "results_val.json"),
-        "--out", str(out))
+        "--out", str(out), *COUNT)
     run("explain.py", "--split", "test", "--confirm-test", "--results", str(out / "results_test.json"),
         "--cases-csv", str(out / "cases_test.csv"), "--out", str(out / "xai"))
     if EXPORT:

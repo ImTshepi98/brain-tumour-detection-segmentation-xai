@@ -52,3 +52,22 @@ def test_border_must_be_set(tmp_path):
     with pytest.raises(AssertionError, match="border"):
         train.main(["--debug", "--config", str(ROOT / "configs/train/main.yaml"), "--out", str(tmp_path),
                     "--set", DEBUG_DATA])
+
+
+def test_runner_skips_dataparallel_for_small_batches():
+    class FakeDP(torch.nn.DataParallel):
+        def __init__(self, module):
+            torch.nn.Module.__init__(self)
+            self.module, self.device_ids, self.calls = module, [0, 1], []
+
+        def forward(self, x, task):
+            self.calls.append(x.shape[0])
+            return self.module(x, task)
+    from model import DualUNet
+    m = DualUNet(channels=(4, 8, 16, 32, 64)).eval()
+    dp = FakeDP(m)
+    run = train.Runner(m, dp)
+    with torch.no_grad():
+        run(torch.randn(1, 4, 32, 32, 32), "seg")
+        run(torch.randn(2, 4, 32, 32, 32), "cls")
+    assert dp.calls == [2]

@@ -98,6 +98,24 @@ def lr_lambda(total_steps, warmup_steps):
     return f
 
 
+class Runner:
+    """Calls the model through DataParallel only when every GPU gets at least one sample
+    (a seg sub-batch of 1 BraTS case on 2 GPUs would leave replica 1 without input)."""
+
+    def __init__(self, model, net):
+        self.model, self.net = model, net
+        self.n = len(net.device_ids) if isinstance(net, nn.DataParallel) else 1
+
+    def __call__(self, x, task):
+        return (self.net if x.shape[0] >= self.n else self.model)(x, task)
+
+    def train(self):
+        self.model.train()
+
+    def eval(self):
+        self.model.eval()
+
+
 @torch.no_grad()
 def validate(net, val, cfg, device):
     net.eval()
@@ -107,10 +125,10 @@ def validate(net, val, cfg, device):
     for start in range(0, len(val), bs):
         idx = np.arange(start, min(start + bs, len(val)))
         x, target, label, has_seg = val.batch(idx, device)
-        prob = torch.sigmoid(net(x, task="cls")).cpu().numpy() if w_cls > 0 else np.full(len(idx), np.nan)
+        prob = torch.sigmoid(net(x, "cls")).cpu().numpy() if w_cls > 0 else np.full(len(idx), np.nan)
         dice = np.full((len(idx), 3), np.nan)
         if w_seg > 0 and has_seg.any():
-            logits = net(x[has_seg], task="seg")
+            logits = net(x[has_seg], "seg")
             assert torch.isfinite(logits).all(), "non-finite validation prediction"
             dice[has_seg.cpu().numpy()] = metrics.dice_per_case(metrics.postprocess(logits), target[has_seg] > 0.5)
         for j, i in enumerate(idx):
@@ -191,6 +209,7 @@ def main(argv=None):
     model = build(cfg).to(device)
     net = nn.DataParallel(model) if (device.type == "cuda" and torch.cuda.device_count() > 1
                                      and cfg.get("data_parallel", True)) else model
+    net = Runner(model, net)
     oc = cfg["optim"]
     w_seg, w_cls = cfg["loss"]["w_seg"], cfg["loss"]["w_cls"]
     epochs = oc["epochs"]
@@ -249,11 +268,11 @@ def main(argv=None):
             opt.zero_grad(set_to_none=True)
             loss = torch.zeros((), device=device)
             if w_cls > 0:
-                lc = losses.cls_loss(net(x, task="cls"), label)
+                lc = losses.cls_loss(net(x, "cls"), label)
                 loss = loss + w_cls * lc
                 sums["cls"] += float(lc.detach())
             if w_seg > 0 and has_seg.any():
-                ls = losses.seg_loss(net(x[has_seg], task="seg"), target[has_seg])
+                ls = losses.seg_loss(net(x[has_seg], "seg"), target[has_seg])
                 loss = loss + w_seg * ls
                 sums["seg"] += float(ls.detach())
                 sums["n_seg"] += 1

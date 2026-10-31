@@ -59,10 +59,10 @@ def kernel(maker, *a):
 w = kernel("kaggle/train/make_kernel.py", "dryrun", "main.yaml", "0", "5",
            json.dumps(["model.channels=[4,8,16,32,64]", "batch_size=2", "data.workers=1", "optim.epochs=1"]))
 assert json.loads((w / "run/done.json").read_text())["epochs_completed"] == 1
-shutil.copytree(w / "run", nb / "brats-dual-train-dryrun/run")
+shutil.copytree(w, nb / "brats-dual-train-dryrun")  # whole output incl. src_used/, as Kaggle attaches it
 w = kernel("kaggle/eval/make_kernel.py", "dryrun", "val", "--controls", "--cpu")
 assert (w / "eval/results_val.json").exists() and (w / "eval/xai/xai_metrics_val.md").exists()
-shutil.copytree(w / "eval", nb / "brats-dual-eval-dryrun-val/eval")
+shutil.copytree(w, nb / "brats-dual-eval-dryrun-val")
 w = kernel("kaggle/eval/make_kernel.py", "dryrun", "test", "--export", "--cpu")
 res = json.loads((w / "eval/results_test.json").read_text())
 assert res["split"] == "test" and res["threshold_rule"] == "frozen_from_val"

@@ -137,3 +137,43 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def signed_distance(brain, spacing=2.0):
+    """SynthStrip-like signed distance map (mm, negative inside) of a boolean mask."""
+    from scipy import ndimage as ndi
+    return (spacing * (ndi.distance_transform_edt(~brain) - ndi.distance_transform_edt(brain))).astype(np.float16)
+
+
+def write_fake_2mm(out_dir, n_brats=8, n_ixi=8, shape=(32, 32, 32), seed=SEED):
+    """Write a miniature copy of the Kaggle 2 mm layout for training dry runs:
+    brats2mm/{x,y}/<id>.npy + crop.json, ixi2mm/{x,sdt}/<id>.npy + template.json,
+    sdt_brats/sdt/<id>.npy + summary_shard0.json, splits.csv (train/val/test per cohort).
+    Returns dict(brats_dir, ixi_dir, brats_sdt_dir, splits)."""
+    out = Path(out_dir)
+    bd, idir, sd = out / "brats2mm", out / "ixi2mm", out / "sdt_brats"
+    for d in (bd / "x", bd / "y", idir / "x", idir / "sdt", sd / "sdt"):
+        d.mkdir(parents=True, exist_ok=True)
+    (bd / "crop.json").write_text(json.dumps({"target": list(shape)}))
+    (idir / "template.json").write_text("{}")
+    (sd / "summary_shard0.json").write_text("{}")
+    rows = []
+    for i, c in enumerate(make_cohort(n_brats, n_ixi, shape, seed)):
+        split = ("train", "train", "val", "test")[i % 4]
+        brain = (c["x"] != 0).any(0)
+        if c["source"] == "brats":
+            np.save(bd / "x" / f"{c['id']}.npy", c["x"])
+            np.save(bd / "y" / f"{c['id']}.npy", c["bits"])
+            np.save(sd / "sdt" / f"{c['id']}.npy", signed_distance(brain))
+            site = "unknown"
+        else:
+            np.save(idir / "x" / f"{c['id']}.npy", c["x"])
+            np.save(idir / "sdt" / f"{c['id']}.npy", signed_distance(brain))
+            site = ("Guys", "HH", "IOP")[i % 3]
+        rows.append(dict(subject=c["id"], id=c["id"], source=c["source"], site=site, split=split,
+                         label=c["label"], has_seg=c["has_seg"], owner_excluded=0))
+    with open(out / "splits.csv", "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0]))
+        w.writeheader()
+        w.writerows(rows)
+    return dict(brats_dir=str(bd), ixi_dir=str(idir), brats_sdt_dir=str(sd), splits=str(out / "splits.csv"))

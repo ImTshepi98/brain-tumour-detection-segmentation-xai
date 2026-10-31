@@ -1,0 +1,26 @@
+# Phase 5 [MUST] main: dual-head + attention gates (PLAN section 3)
+name: main
+seed: 42
+border: required        # mm, from src/calibrate_border.py (BraTS train rows); set with --set border=<b>
+batch_size: 4
+val_batch_size: 2
+data_parallel: true
+data:
+  sampler: balanced     # each draw: tumour or healthy with p 0.5
+  samples_per_epoch: 0  # 0 = number of train subjects
+  limit_train: 0        # smoke test only: subjects per cohort
+  limit_val: 0
+  workers: 4
+augment: {scale: 0.1, shift: 0.1, noise: 0.05, flip: true}
+model:
+  channels: [16, 32, 64, 128, 256]
+  attention: true
+  cls_hidden: 64
+  cls_dropout: 0.0
+loss: {w_seg: 1.0, w_cls: 0.5}
+optim:
+  lr: 3.0e-4
+  weight_decay: 1.0e-5
+  grad_clip: 1.0
+  warmup_epochs: 0
+  epochs: 60            # placeholder: set from the smoke-test speed so the run fits its budget

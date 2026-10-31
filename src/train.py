@@ -281,6 +281,7 @@ def main(argv=None):
                    train_seg=sums["seg"] / max(1, sums["n_seg"]) if w_seg > 0 else None,
                    **{f"val_{k}": v for k, v in val_m.items()}, best=best, improved=improved,
                    train_seconds=t_train, val_seconds=t_val, steps_per_second=steps_per_epoch / t_train,
+                   gpu_peak_gb=(torch.cuda.max_memory_allocated() / 2**30) if device.type == "cuda" else None,
                    elapsed_seconds=time.time() - t0)
         history.append(rec)
         with open(out / "metrics.jsonl", "a") as f:

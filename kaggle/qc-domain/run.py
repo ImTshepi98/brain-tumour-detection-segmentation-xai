@@ -12,7 +12,7 @@ brats = next(p.parent for p in INP.rglob("brats2mm/crop.json"))
 ixi = sorted(str(p.parent) for p in INP.rglob("ixi2mm/template.json"))
 sdt_b = sorted(str(p.parent) for p in INP.rglob("sdt/summary_shard*.json"))
 print("brats", brats, "ixi", ixi, "brats sdt", sdt_b, flush=True)
-BORDER = __BORDER__
+BORDER = 0
 EXTRA = [] if BORDER is None else ["--border", str(BORDER), "--brats-sdt-dirs", *sdt_b]
 subprocess.run([sys.executable, "-u", str(CODE / "qc_domain.py"), "--brats-dir", str(brats), "--ixi-dirs", *ixi,
                 "--splits", str(DATA / "splits.csv"), "--out", "/kaggle/working/domain", "--workers", "4"] + EXTRA,

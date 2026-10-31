@@ -1,0 +1,48 @@
+{
+  "rule": "largest b with median frac_inside >= 0.99 over BraTS train",
+  "border": 0,
+  "n_brats_train": 875,
+  "n_brats_rows": 1251,
+  "n_ixi_rows": 577,
+  "median_frac_inside": {
+    "1": 0.9724230819566906,
+    "0": 0.992318765491279,
+    "-1": 0.997144500117337,
+    "-2": 0.9988851487061623,
+    "-3": 0.9996926768857519,
+    "-4": 0.9999589464975448
+  },
+  "median_volumes": {
+    "1": {
+      "brats_train_ss_ml": 1504.27,
+      "brats_train_challenge_covered": 0.9975229214548491,
+      "ixi_trainval_ml": 1569.875
+    },
+    "0": {
+      "brats_train_ss_ml": 1462.074,
+      "brats_train_challenge_covered": 0.9907214014883942,
+      "ixi_trainval_ml": 1526.902
+    },
+    "-1": {
+      "brats_train_ss_ml": 1419.718,
+      "brats_train_challenge_covered": 0.9667971413166806,
+      "ixi_trainval_ml": 1472.3325
+    },
+    "-2": {
+      "brats_train_ss_ml": 1357.693,
+      "brats_train_challenge_covered": 0.9266371294521731,
+      "ixi_trainval_ml": 1410.8965
+    },
+    "-3": {
+      "brats_train_ss_ml": 1293.301,
+      "brats_train_challenge_covered": 0.8844183258595955,
+      "ixi_trainval_ml": 1341.2759999999998
+    },
+    "-4": {
+      "brats_train_ss_ml": 1217.184,
+      "brats_train_challenge_covered": 0.8338424756806476,
+      "ixi_trainval_ml": 1258.466
+    }
+  },
+  "brats_challenge_ml_train": 1469.184
+}

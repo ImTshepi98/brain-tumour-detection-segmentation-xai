@@ -41,5 +41,6 @@
     "BraTS2021_00356",
     "BraTS2021_00628"
   ],
-  "visual_review_complete": false
+  "visual_review_complete": true,
+  "visual_review_by": "owner (Tshepiso Lewele), stated in chat 2026-10-31; all 34 flagged subjects kept"
 }

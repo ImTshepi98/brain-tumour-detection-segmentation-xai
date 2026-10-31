@@ -36,3 +36,5 @@ Nothing is excluded automatically. Pending the owner's review, flagged subjects 
 
 ## Test split
 Test subjects went through the same deterministic pipeline. Their QC metrics appear in the tables above (aggregate QC only). No choice was tuned on them.
+
+**Visual review:** OK, by the owner on 2026-10-31 (T2 fine; T1 histograms discussed; all 34 flagged subjects kept). `visual_review_complete: true`.

@@ -17,11 +17,16 @@ brats = next(p.parent for p in INP.rglob("brats2mm/crop.json"))
 ixi = sorted(str(p.parent) for p in INP.rglob("ixi2mm/template.json"))
 sdt_b = sorted(str(p.parent) for p in INP.rglob("sdt/summary_shard*.json"))
 assert len(ixi) == 3 and len(sdt_b) == 3, (ixi, sdt_b)
-prev = sorted(INP.rglob("run/last.pt"))  # attach an earlier version's output to continue
+# Continue from the furthest checkpoint attached (an earlier completed kernel's output, or a private dataset
+# holding a crashed run's run/ folder): train.py resumes at that epoch + 1 and runs to the configured end
+import torch
+prev = sorted(((torch.load(p, map_location="cpu", weights_only=False)["epoch"], str(p)) for p in INP.rglob("run/last.pt")),
+              reverse=True)
+print("attached checkpoints (epoch, path):", prev, flush=True)
 out = WORK / "run"
 if prev:
-    shutil.copytree(prev[0].parent, out, dirs_exist_ok=True)
-    print("continuing from", prev[0], flush=True)
+    shutil.copytree(Path(prev[0][1]).parent, out, dirs_exist_ok=True)
+    print(f"continuing from {prev[0][1]} (epoch {prev[0][0]} done; next epoch {prev[0][0] + 1})", flush=True)
 if not DRY:
     subprocess.run(["nvidia-smi"], check=False)
     subprocess.run(["free", "-g"], check=False)
@@ -32,4 +37,5 @@ subprocess.run([sys.executable, "-u", str(CODE / "train.py"), "--config", str(CO
                 "--set", f"border={json.dumps(BORDER)}", *EXTRA,
                 "--brats-dir", str(brats), "--ixi-dirs", *ixi, "--brats-sdt-dirs", *sdt_b,
                 "--splits", str(DATA / "splits.csv"), "--out", str(out), "--max-minutes", str(MAX_MINUTES),
+                "--max-rss-gb", "0" if DRY else "27",  # Kaggle T4 kernels have ~31 GB host RAM
                 "--resume", "auto"] + (["--no-count-check"] if DRY else []), check=True, env=env if not DRY else None)

@@ -40,7 +40,7 @@ import metrics  # noqa: E402
 from model import build, n_params  # noqa: E402
 
 SIGNATURE = "brats-dual-train-v1"
-RUNTIME_KEYS = ("max_minutes", "resume")  # changing these does not change the protocol
+RUNTIME_KEYS = ("max_minutes", "resume", "max_rss_gb")  # changing these does not change the protocol
 
 
 def load_config(path, overrides=()):
@@ -173,6 +173,8 @@ def main(argv=None):
     ap.add_argument("--splits")
     ap.add_argument("--out", required=True)
     ap.add_argument("--max-minutes", type=float, default=600)
+    ap.add_argument("--max-rss-gb", type=float, default=0,
+                    help="stop cleanly (checkpoint saved) before host RSS would pass this; 0 = off")
     ap.add_argument("--resume", default=None, help="path to last.pt, or 'auto' = <out>/last.pt if present")
     ap.add_argument("--debug", action="store_true", help="synthetic data, CPU, tiny (PLAN rule 3)")
     ap.add_argument("--device", default=None)
@@ -197,7 +199,7 @@ def main(argv=None):
     border = cfg["border"]
     assert border is None or isinstance(border, (int, float)), \
         f"border must be set (mm, from calibrate_border.py) or null, got {border!r}"
-    cfg["max_minutes"], cfg["resume"] = args.max_minutes, args.resume
+    cfg["max_minutes"], cfg["resume"], cfg["max_rss_gb"] = args.max_minutes, args.resume, args.max_rss_gb
     phash = protocol_hash(cfg)
     seed = cfg.get("seed", 42)
     seed_all(seed)
@@ -263,10 +265,18 @@ def main(argv=None):
     durations, t_first_step = [], None
     acfg = cfg.get("augment", {})
     stopped = "epochs_done"
+    rss = [host_rss_gb()]  # host RSS before the first epoch of this session and after each epoch
     for epoch in range(start_epoch, epochs):
         if durations and time.time() - t0 + 1.1 * max(durations) > budget:
             stopped = "time_budget"
             break
+        # main v1 and r1 were SIGKILLed at ~30 GB host RSS (~1 GB growth per epoch); end the session
+        # cleanly instead, so a later session continues from last.pt (Kaggle only attaches completed output)
+        if args.max_rss_gb and len(rss) > 1 and None not in rss:
+            growth = max(b - a for a, b in zip(rss, rss[1:]))
+            if rss[-1] + 1.5 * max(growth, 0) > args.max_rss_gb:
+                stopped = "memory_budget"
+                break
         te = time.time()
         net.train()
         gen = torch.Generator(device=device).manual_seed(seed + epoch)
@@ -326,14 +336,16 @@ def main(argv=None):
             save(out / "best.pt", state)
             (out / "val_best.json").write_text(json.dumps(recs, indent=1))
         print("EPOCH", json.dumps(rec), flush=True)
+        rss.append(rec["host_rss_gb"])
         del recs, state
         gc.collect()
 
-    done = dict(stopped=stopped, epochs_completed=len(history), best=best, total_seconds=time.time() - t0,
+    done = dict(stopped=stopped, epochs_completed=len(history), next_epoch=len(history), epochs_planned=epochs,
+                start_epoch=start_epoch, best=best, total_seconds=time.time() - t0,
                 data_load_seconds=t_load, first_step_seconds=t_first_step, protocol_hash=phash,
                 test_read=False)
     (out / "done.json").write_text(json.dumps(done, indent=2))
-    print("TRAINING RUN COMPLETE; TEST REMAINS LOCKED", json.dumps(done), flush=True)
+    print(f"TRAINING SESSION ENDED ({stopped}); TEST REMAINS LOCKED", json.dumps(done), flush=True)
     return done
 
 

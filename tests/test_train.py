@@ -71,3 +71,17 @@ def test_runner_skips_dataparallel_for_small_batches():
         run(torch.randn(1, 4, 32, 32, 32), "seg")
         run(torch.randn(2, 4, 32, 32, 32), "cls")
     assert dp.calls == [2]
+
+
+def test_memory_budget_stops_cleanly_then_resume_finishes(tmp_path, monkeypatch):
+    # RSS grows 1 GB per epoch from 10 GB; limit 12.5 GB -> stops before the epoch that would pass it
+    vals = iter(range(10, 100))
+    monkeypatch.setattr(train, "host_rss_gb", lambda: float(next(vals)))
+    out = tmp_path / "run"
+    d = train.main(["--debug", "--out", str(out), "--set", *SMALL, "optim.epochs=4", "--max-rss-gb", "12.5"])
+    assert d["stopped"] == "memory_budget" and 0 < d["epochs_completed"] < 4 and d["next_epoch"] == d["epochs_completed"]
+    # a later session (no memory limit) continues at the next epoch and ends at the planned last epoch
+    monkeypatch.setattr(train, "host_rss_gb", lambda: None)
+    d2 = train.main(["--debug", "--out", str(out), "--set", *SMALL, "optim.epochs=4", "--resume", "auto"])
+    assert d2["stopped"] == "epochs_done" and d2["start_epoch"] == d["next_epoch"] and d2["epochs_completed"] == 4
+    assert [m["epoch"] for m in _metrics(out)] == [0, 1, 2, 3]

@@ -56,13 +56,21 @@ def kernel(maker, *a):
     return base / "working"
 
 
-small = json.dumps(["model.channels=[4,8,16,32,64]", "batch_size=2", "data.workers=1", "optim.epochs=2"])
+small = json.dumps(["model.channels=[4,8,16,32,64]", "batch_size=2", "data.workers=1", "optim.epochs=3"])
 w = kernel("kaggle/train/make_kernel.py", "dryrun", "main.yaml", "0", "0.0001", small)  # stops after epoch 0
 assert json.loads((w / "run/done.json").read_text())["stopped"] == "time_budget"
 shutil.copytree(w, nb / "brats-dual-train-dryrun-v1")  # whole output incl. src_used/, as Kaggle attaches it
-w = kernel("kaggle/train/make_kernel.py", "dryrun-r1", "main.yaml", "0", "5", small, "brats-dual-train-dryrun-v1")
-assert [json.loads(l)["epoch"] for l in (w / "run/metrics.jsonl").read_text().splitlines()] == [0, 1]
+w = kernel("kaggle/train/make_kernel.py", "dryrun-r1", "main.yaml", "0", "0.0001", small, "brats-dual-train-dryrun-v1")
+assert json.loads((w / "run/done.json").read_text())["next_epoch"] == 2  # resumed at 1, stopped after it
+resume_ds = inp / "datasets/leweletp/brats-dual-dryrun-resume"  # a crashed run's run/ uploaded as a dataset
+shutil.copytree(w / "run", resume_ds / "run")
+# both the epoch-0 kernel output and the epoch-1 dataset are attached: must continue from epoch 1
+w = kernel("kaggle/train/make_kernel.py", "dryrun-r2", "main.yaml", "0", "5", small,
+           "brats-dual-train-dryrun-v1,dataset:brats-dual-dryrun-resume")
+assert [json.loads(l)["epoch"] for l in (w / "run/metrics.jsonl").read_text().splitlines()] == [0, 1, 2]
+assert json.loads((w / "run/done.json").read_text())["stopped"] == "epochs_done"
 shutil.rmtree(nb / "brats-dual-train-dryrun-v1")
+shutil.rmtree(resume_ds)
 shutil.copytree(w, nb / "brats-dual-train-dryrun")
 w = kernel("kaggle/eval/make_kernel.py", "dryrun", "val", "--controls", "--cpu")
 assert (w / "eval/results_val.json").exists() and (w / "eval/xai/xai_metrics_val.md").exists()

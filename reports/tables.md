@@ -31,6 +31,7 @@ BraTS has no per-case age, so these groups show how age and site affect the nega
 | run | ms per case | hardware |
 |---|---|---|
 | main | 107.4 ± 0.9 | Tesla T4 |
+| main (local CPU, n=20) | 2230.5 ± 29.9 | CPU: AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD, 12 logical cores, torch 2.15.0+cpu (6 threads) |
 
 ### Grad-CAM++ checks (median per case)
 

@@ -1,0 +1,10 @@
+{
+  "ms_per_case_mean": 2230.4838549986016,
+  "ms_per_case_sd": 29.89461354204092,
+  "n": 20,
+  "device": "cpu",
+  "hardware": "CPU: AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD, 12 logical cores, torch 2.15.0+cpu (6 threads)",
+  "checkpoint_epoch": 32,
+  "protocol_hash": "948372a86b6ea63d13fdbf086bdf6bf9f2d4b8f12445865df0968e7b1144b655",
+  "n_cases": 10
+}

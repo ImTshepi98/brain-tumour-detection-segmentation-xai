@@ -1,11 +1,11 @@
-"""Phase 6/7 evaluation of run main, stage val. Thin wrapper around evaluate.py / explain.py.
+"""Phase 6/7 evaluation of run main-r5, stage val. Thin wrapper around evaluate.py / explain.py.
 val:  evaluate val (threshold = max F1 on val; controls if CONTROLS), Grad-CAM++ checks on all val cases.
 test: needs the val stage's output attached (results_val.json); evaluates test ONCE with the frozen
       threshold, Grad-CAM++ checks and overlays on test, and exports GUI cases if EXPORT."""
 import json, os, shutil, subprocess, sys
 from pathlib import Path
 
-RUN, STAGE, CONTROLS, EXPORT = "main", "val", True, False
+RUN, STAGE, CONTROLS, EXPORT = "main-r5", "val", True, False
 # BRATS_DUAL_DRYRUN=<dir>: local dry run against <dir>/input, writing to <dir>/working (PLAN rule 3)
 DRY = os.environ.get("BRATS_DUAL_DRYRUN")
 if not DRY:

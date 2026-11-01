@@ -1,6 +1,6 @@
 {
-  "id": "leweletp/brats-dual-eval-main-val",
-  "title": "brats-dual-eval-main-val",
+  "id": "leweletp/brats-dual-eval-main-r5-val",
+  "title": "brats-dual-eval-main-r5-val",
   "code_file": "run.py",
   "language": "python",
   "kernel_type": "script",
@@ -20,7 +20,7 @@
     "leweletp/brats-dual-sdt-brats-s0",
     "leweletp/brats-dual-sdt-brats-s1",
     "leweletp/brats-dual-sdt-brats-s2",
-    "leweletp/brats-dual-train-main"
+    "leweletp/brats-dual-train-main-r5"
   ],
   "machine_shape": "NvidiaTeslaT4"
 }

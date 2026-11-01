@@ -28,6 +28,7 @@ def load(d, split):
 
 
 KEYS = {"tumour_mirrored_brats": ("1", "prob_mirrored"), "tumour_inserted_ixi": ("0", "prob_inserted"),
+        "sham_inserted_ixi": ("0", "prob_sham"),
         "eroded_ixi": ("0", "prob_eroded"), "eroded_brats": ("1", "prob_eroded")}
 
 
@@ -101,12 +102,13 @@ def tables(runs, split):
         L += ["", "### Controls (val): change in tumour probability", "",
               "mirrored = BraTS tumour replaced by contralateral tissue (is the tumour needed?); inserted = a "
               "BraTS val tumour pasted into a healthy IXI scan, intensity-matched to the host (is the tumour "
-              "enough?); eroded = brain mask shrunk by 1 voxel and re-z-scored (boundary cue).", "",
+              "enough?); sham = the same voxels filled with the donor's healthy mirror-side tissue, same matching "
+              "(tumour appearance or BraTS texture?); eroded = brain mask shrunk by 1 voxel and re-z-scored (boundary cue).", "",
               "| run | control | n | mean change | median change | median logit change | above threshold before -> after |",
               "|---|---|---|---|---|---|---|"]
         for k, c in ctl.items():
             lc = logit_changes(runs[k], split)
-            for name in ("tumour_mirrored_brats", "tumour_inserted_ixi", "eroded_ixi", "eroded_brats"):
+            for name in ("tumour_mirrored_brats", "tumour_inserted_ixi", "sham_inserted_ixi", "eroded_ixi", "eroded_brats"):
                 if name not in c:
                     continue
                 v = c[name]
@@ -117,6 +119,9 @@ def tables(runs, split):
             if "insert_ml_median" in c:
                 L.append(f"| {k} | inserted tumour: median share inside host brain / median volume (mL) | | "
                          f"{f(c['insert_inside_frac_median'])} | {f(c['insert_ml_median'], 1)} | | |")
+            if "sham_ml_median" in c:
+                L.append(f"| {k} | sham: median share of WT voxels pasted / median volume (mL) | | "
+                         f"{f(c['sham_frac_median'])} | {f(c['sham_ml_median'], 1)} | | |")
     xai = {k: Path(runs[k]) / "xai" / f"xai_summary_{split}.json" for k in have}
     xai = {k: json.loads(p.read_text()) for k, p in xai.items() if p.exists()}
     if xai:

@@ -214,17 +214,36 @@ def erode_brain(x, bits=None, iterations=1):
     return out
 
 
-def insert_tumour(host, donor, donor_bits):
+def mirror_lr(x, brain):
+    """x mirrored across the brain's left-right midline (as in mirror_tumour); also returns a mask of
+    voxels whose mirror source lies inside the array."""
+    lo, hi = [(int(i.min()), int(i.max())) for i in np.nonzero(brain)][LR_AXIS]
+    n = brain.shape[LR_AXIS]
+    src = lo + hi - np.arange(n)
+    valid = (src >= 0) & (src < n)
+    shape = [1, 1, 1]
+    shape[LR_AXIS] = n
+    return np.take(x, np.clip(src, 0, n - 1), axis=-3 + LR_AXIS), np.broadcast_to(valid.reshape(shape), brain.shape)
+
+
+def insert_tumour(host, donor, donor_bits, sham=False):
     """Counterfactual for healthy scans: paste the donor's WT region into the host at the same voxels
     (both arrays are on the SRI24 grid), kept to the host brain. Per channel present in both, the
     tumour keeps its contrast relative to the donor's tumour-free brain and is rescaled to the host
     brain's mean/SD; the channel is then re-z-scored over the host brain (the preprocessing rule).
-    Channels absent in the host (IXI T1ce/FLAIR) stay 0. Returns (x_new float32, fraction of donor
-    WT voxels inside the host brain, inserted volume in mL at 2 mm)."""
+    Channels absent in the host (IXI T1ce/FLAIR) stay 0. sham=True pastes the donor's *healthy* tissue
+    from the mirror image of the WT region instead (same host voxels, same matching); voxels whose mirror
+    is outside the donor brain or inside the WT are left unchanged. Returns (x_new float32, fraction of
+    donor WT voxels pasted, pasted volume in mL at 2 mm)."""
     host, donor = np.asarray(host, np.float32), np.asarray(donor, np.float32)
     hb, db = (host != 0).any(0), (donor != 0).any(0)
     wt = (np.asarray(donor_bits) & 4) > 0
     region = wt & hb
+    src = donor
+    if sham:
+        src, valid = mirror_lr(donor, db)
+        ok, _ = mirror_lr(db & ~wt, db)
+        region = region & ok & valid
     out = host.copy()
     if not region.any():
         return out, 0.0, 0.0
@@ -232,7 +251,7 @@ def insert_tumour(host, donor, donor_bits):
         hv, dn = host[c][hb], donor[c][db & ~wt]
         if not hv.any() or not dn.any():
             continue
-        z = (donor[c][region] - dn.mean(dtype=np.float64)) / dn.std(dtype=np.float64)
+        z = (src[c][region] - dn.mean(dtype=np.float64)) / dn.std(dtype=np.float64)
         out[c][region] = z * hv.std(dtype=np.float64) + hv.mean(dtype=np.float64)
         out[c][hb] = zscore_nonzero(out[c][hb])[0]
     return out, float(region.sum() / wt.sum()), float(region.sum() * 8 / 1000)
@@ -266,6 +285,8 @@ def controls(model, cohort, device, thr):
             d = donors[i]
             xi, inside, ml = insert_tumour(x, cohort.x[d], cohort.y[d])
             r.update(prob_inserted=prob(xi), insert_donor=cohort.ids[d], insert_inside_frac=inside, insert_ml=ml)
+            xs, sfrac, sml = insert_tumour(x, cohort.x[d], cohort.y[d], sham=True)
+            r.update(prob_sham=prob(xs), sham_frac=sfrac, sham_ml=sml)
         rows.append(r)
 
     def summ(rs, key):
@@ -279,6 +300,9 @@ def controls(model, cohort, device, thr):
     return rows, dict(tumour_mirrored_brats=summ(br, "prob_mirrored"), eroded_ixi=summ(ixi, "prob_eroded"),
                       eroded_brats=summ(br, "prob_eroded"),
                       tumour_inserted_ixi=summ([r for r in ixi if "prob_inserted" in r], "prob_inserted"),
+                      sham_inserted_ixi=summ([r for r in ixi if "prob_sham" in r], "prob_sham"),
+                      sham_frac_median=float(np.nanmedian([r["sham_frac"] for r in ixi if "sham_frac" in r] or [np.nan])),
+                      sham_ml_median=float(np.nanmedian([r["sham_ml"] for r in ixi if "sham_ml" in r] or [np.nan])),
                       insert_inside_frac_median=float(np.nanmedian([r["insert_inside_frac"] for r in ixi
                                                                     if "insert_inside_frac" in r] or [np.nan])),
                       insert_ml_median=float(np.nanmedian([r["insert_ml"] for r in ixi if "insert_ml" in r] or [np.nan])),
@@ -390,7 +414,7 @@ def main(argv=None):
     ap.add_argument("--confirm-test", action="store_true")
     ap.add_argument("--threshold", type=float, default=None, help="fixed threshold (val only unless frozen)")
     ap.add_argument("--threshold-from", help="results_val.json whose chosen threshold is used (required for test)")
-    ap.add_argument("--controls", action="store_true", help="tumour-mirroring, tumour-insertion and mask-erosion controls (val only)")
+    ap.add_argument("--controls", action="store_true", help="tumour-mirroring, tumour/sham-insertion and mask-erosion controls (val only)")
     ap.add_argument("--brats-dir")
     ap.add_argument("--ixi-dirs", nargs="*", default=[])
     ap.add_argument("--brats-sdt-dirs", nargs="*", default=[])

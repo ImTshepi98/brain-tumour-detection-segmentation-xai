@@ -81,6 +81,35 @@ def test_insert_tumour_matches_host_and_keeps_contrast():
         assert xi[c][region].mean() - xi[c][hb & ~region].mean() > 2.5  # contrast kept (~3 SD)
 
 
+def test_sham_insertion_pastes_healthy_mirror_tissue_at_same_voxels():
+    rng = np.random.default_rng(6)
+    host = np.zeros((4, 24, 24, 24), np.float32)
+    host[[0, 2], 3:21, 3:21, 3:21] = rng.normal(0, 1, (2, 18, 18, 18))
+    donor = np.zeros((4, 24, 24, 24), np.float32)
+    donor[:, 2:22, 2:22, 2:22] = rng.normal(0, 1, (4, 20, 20, 20))
+    bits = np.zeros((24, 24, 24), np.uint8)
+    bits[4:8, 8:12, 8:12] = 7
+    donor[:, bits > 0] += 3.0
+    xt, ft, mlt = ev.insert_tumour(host, donor, bits)
+    xs, fs, mls = ev.insert_tumour(host, donor, bits, sham=True)
+    region = (bits > 0) & (host != 0).any(0)
+    changed = (xs != host).any(0) & ~region
+    assert fs == ft == 1.0 and mls == mlt  # mirror of a one-sided tumour is all healthy brain
+    assert not xs[[1, 3]].any()
+    hb = (host != 0).any(0)
+    for c in (0, 2):
+        assert xt[c][region].mean() - xt[c][hb & ~region].mean() > 2.5  # tumour keeps its contrast
+        assert abs(xs[c][region].mean() - xs[c][hb & ~region].mean()) < 0.5  # sham tissue looks healthy
+        # pasted values are the donor's mirror (i -> 2 + 21 - i), affinely matched
+        src = donor[c, 19:15:-1, 8:12, 8:12].ravel()
+        assert np.corrcoef(src, xs[c, 4:8, 8:12, 8:12].ravel())[0, 1] > 0.999
+    # a central tumour mirrors onto itself: nothing valid to paste
+    bits2 = np.zeros_like(bits)
+    bits2[10:14, 8:12, 8:12] = 7
+    _, f2, _ = ev.insert_tumour(host, donor, bits2, sham=True)
+    assert f2 < 0.6
+
+
 def test_insertion_donors_fixed_and_cover_all_healthy():
     class Cohort(list):
         pass
@@ -105,7 +134,7 @@ def test_evaluate_val_then_test_once(tmp_path):
     res = ev.main(["--debug", "--out", str(tmp_path), "--controls"])
     assert res["split"] == "val" and res["threshold_rule"] == "max_f1_on_val"
     assert {"tumour_mirrored_brats", "tumour_inserted_ixi", "eroded_ixi"} <= set(res["controls"])
-    assert res["controls"]["tumour_inserted_ixi"]["n"] > 0
+    assert res["controls"]["tumour_inserted_ixi"]["n"] > 0 and res["controls"]["sham_inserted_ixi"]["n"] > 0
     assert (tmp_path / "cases_val.csv").exists() and (tmp_path / "figures" / "roc_val.png").exists()
     with pytest.raises(AssertionError, match="locked"):
         ev.main(["--debug", "--out", str(tmp_path), "--split", "test"])

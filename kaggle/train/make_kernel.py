@@ -19,7 +19,8 @@ d.mkdir(exist_ok=True)
 tpl = (here / "run_template.py").read_text()
 (d / "run.py").write_text(tpl.replace("__NAME__", name).replace("__CONFIG__", config)
                           .replace("__BORDER__", repr(None if border == "null" else float(border)))
-                          .replace("__MAX_MINUTES__", str(float(minutes))).replace("__EXTRA__", repr(extra)))
+                          .replace("__MAX_MINUTES__", str(float(minutes))).replace("__EXTRA__", repr(extra))
+                          .replace("__CONTINUE__", repr(srcs)))
 meta = {"id": f"leweletp/brats-dual-train-{name}", "title": f"brats-dual-train-{name}", "code_file": "run.py",
         "language": "python", "kernel_type": "script", "is_private": True, "enable_gpu": True,
         "machine_shape": "NvidiaTeslaT4", "enable_tpu": False, "enable_internet": True,

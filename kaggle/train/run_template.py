@@ -2,7 +2,7 @@
 import json, os, shutil, subprocess, sys
 from pathlib import Path
 
-CONFIG, BORDER, MAX_MINUTES, EXTRA = "__CONFIG__", __BORDER__, __MAX_MINUTES__, __EXTRA__
+CONFIG, BORDER, MAX_MINUTES, EXTRA, CONTINUE = "__CONFIG__", __BORDER__, __MAX_MINUTES__, __EXTRA__, __CONTINUE__
 # BRATS_DUAL_DRYRUN=<dir>: local dry run against <dir>/input, writing to <dir>/working (PLAN rule 3)
 DRY = os.environ.get("BRATS_DUAL_DRYRUN")
 if not DRY:
@@ -18,11 +18,13 @@ ixi = sorted(str(p.parent) for p in INP.rglob("ixi2mm/template.json"))
 sdt_b = sorted(str(p.parent) for p in INP.rglob("sdt/summary_shard*.json"))
 assert len(ixi) == 3 and len(sdt_b) == 3, (ixi, sdt_b)
 # Continue from the furthest checkpoint attached (an earlier completed kernel's output, or a private dataset
-# holding a crashed run's run/ folder): train.py resumes at that epoch + 1 and runs to the configured end
+# holding a crashed run's run/ folder): train.py resumes at that epoch + 1 and runs to the configured end.
+# Any last.pt counts: Kaggle flattens a dataset whose only top-level entry is run/ (main-r2 missed it)
 import torch
-prev = sorted(((torch.load(p, map_location="cpu", weights_only=False)["epoch"], str(p)) for p in INP.rglob("run/last.pt")),
-              reverse=True)
+prev = sorted(((torch.load(p, map_location="cpu", weights_only=False)["epoch"], str(p)) for p in INP.rglob("last.pt")
+               if (p.parent / "metrics.jsonl").exists()), reverse=True)
 print("attached checkpoints (epoch, path):", prev, flush=True)
+assert prev or not CONTINUE, f"built to continue from {CONTINUE} but no last.pt is attached"
 out = WORK / "run"
 if prev:
     shutil.copytree(Path(prev[0][1]).parent, out, dirs_exist_ok=True)
@@ -37,5 +39,5 @@ subprocess.run([sys.executable, "-u", str(CODE / "train.py"), "--config", str(CO
                 "--set", f"border={json.dumps(BORDER)}", *EXTRA,
                 "--brats-dir", str(brats), "--ixi-dirs", *ixi, "--brats-sdt-dirs", *sdt_b,
                 "--splits", str(DATA / "splits.csv"), "--out", str(out), "--max-minutes", str(MAX_MINUTES),
-                "--max-rss-gb", "0" if DRY else "27",  # Kaggle T4 kernels have ~31 GB host RAM
+                "--max-rss-gb", "0" if DRY else "29",  # Kaggle T4 kernels have ~31 GB; v1/r1 were killed at ~30 GB
                 "--resume", "auto"] + (["--no-count-check"] if DRY else []), check=True, env=env if not DRY else None)

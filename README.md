@@ -66,10 +66,10 @@ Local debug entry points (synthetic data):
 |---|---|---|
 | `main` | r1 0-14, r3 15-25, r4 26-36, r5 37-39 | 32 |
 | `noattn` | 0-14, 15-29, 30-39 | 31 |
-| `segonly` | in progress (session 1: 0-18) | |
-| `clsonly` | pending | |
+| `segonly` | 0-18, 19-36, 37-39 | 29 |
+| `clsonly` | 0-34, 35-39 | 26 |
 
-- **Inference:** batch 1, detection + segmentation: T4 107 ms (`main`), local CPU (AMD, 12 logical cores) 2.23 s.
+- **Inference:** batch 1, detection + segmentation: T4 107 ms (`main`), local CPU (AMD, 12 logical cores) 2.23 s. Single-task: `segonly` 69 ms, `clsonly` 28 ms (T4).
 - **Local machine:** Windows 11, 7.3 GB RAM. Enough for dry runs, tables and the GUI; not for full-data training.
 
 ## Repository layout

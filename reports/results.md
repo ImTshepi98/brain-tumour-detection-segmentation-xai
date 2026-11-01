@@ -1,6 +1,6 @@
 # Results and Discussion (draft skeleton with real numbers)
 
-Every number below comes from `reports/tables.md` (generated) or the report it names. Sections marked **PENDING** wait for the `segonly`/`clsonly` runs.
+Every number below comes from `reports/tables.md` (generated) or the report it names. All four runs (`main`, `noattn`, `segonly`, `clsonly`) are trained to 40 epochs and their test splits were read once.
 Split sizes: BraTS train 875 / val 188 / test 188; IXI train 404 / val 86 / test 87. Seed 42 throughout; test read once per model.
 
 ## 1. Data
@@ -28,6 +28,8 @@ Split sizes: BraTS train 875 / val 188 / test 188; IXI train 404 / val 86 / test
 |---|---|---|
 | `main` | 32 | 0.932 |
 | `noattn` | 31 | 0.940 |
+| `segonly` (val mean DSC) | 29 | 0.873 |
+| `clsonly` (val F1) | 26 | 1.000 |
 
 - **Engineering note:** host memory leaked about 1 GB per epoch. Training therefore stops cleanly at a memory budget and resumes in a new session from `last.pt`. The protocol hash is identical across sessions.
 
@@ -38,7 +40,7 @@ Split sizes: BraTS train 875 / val 188 / test 188; IXI train 404 / val 86 / test
 |---|---|---|---|---|
 | `main` (thr 0.017) | 1.000 (188/188) | 1.000 (87/87) | 1.000 | 1.000 |
 | `noattn` (thr 0.5) | 1.000 | 1.000 | 1.000 | 1.000 |
-| `clsonly` | PENDING | | | |
+| `clsonly` (thr 0.5) | 1.000 | 1.000 | 1.000 | 1.000 |
 
 - Specificity is 1.000 in every IXI age band and site; Wilson lower bounds range from 0.44 (n=3) to 0.96 (n=87).
 - The margin is wide: the lowest tumour probability is 0.99994 and the highest healthy probability 0.0011.
@@ -49,7 +51,7 @@ Split sizes: BraTS train 875 / val 188 / test 188; IXI train 404 / val 86 / test
 |---|---|---|---|---|
 | `main` | 0.849 ± 0.215 | 0.900 ± 0.169 | 0.921 ± 0.089 | 2.8 |
 | `noattn` | 0.844 ± 0.219 | 0.892 ± 0.185 | 0.921 ± 0.086 | 2.8 |
-| `segonly` | PENDING | | | |
+| `segonly` | 0.849 ± 0.213 | 0.905 ± 0.157 | 0.920 ± 0.088 | 2.8 |
 
 - Medians for `main`: 0.920 / 0.957 / 0.948.
 - Failures are rare: 2 of 188 test cases have WT DSC < 0.5. The worst is BraTS2021_01293, a large cystic tumour, dark on T1 and FLAIR, where only rim fragments were segmented.
@@ -67,10 +69,33 @@ Split sizes: BraTS train 875 / val 188 / test 188; IXI train 404 / val 86 / test
   - On val, the direction is reversed: ET +0.015, TC +0.018, both CIs touching 0.
   - **Conclusion:** no meaningful effect of attention gates at this resolution. The hypothesis that attention gates improve segmentation is not supported.
   - Attention gates cost 14 ms per case on a T4 (107 vs 94 ms).
-- **Dual-head vs single-task (`segonly`, `clsonly`):** PENDING. This tests the proposal's hypothesis that shared features improve both tasks.
+- **Dual-head vs single-task (`segonly`, `clsonly`):** this tests the proposal's hypothesis that shared features improve both tasks.
+  - **Segmentation (`segonly` − `main`, paired per case on test):**
+
+    | region | mean DSC difference (95% CI) |
+    |---|---|
+    | ET | +0.001 (−0.008 to 0.008) |
+    | TC | +0.005 (−0.001 to 0.011) |
+    | WT | −0.000 (−0.002 to 0.001) |
+
+    - All three CIs include 0.
+    - On val, `segonly` is slightly better on TC (+0.011, 0.003 to 0.020); ET and WT include 0.
+    - Adding the detection head does not improve segmentation; if anything, it costs a little TC accuracy on val.
+  - **Detection:** `clsonly` is also perfect on val and test (F1 = AUROC = 1.000), so the two cannot be told apart. Its controls repeat the shortcut pattern:
+
+    | control | median logit change | crossings |
+    |---|---|---|
+    | mirrored tumour | −0.53 | 183/188 still positive |
+    | tumour insertion | +18.34 | 53/86 flip |
+    | sham | +0.19 | 0/86 flip |
+
+    The shortcut is therefore not caused by the dual-head design.
+  - **Conclusion:** the hypothesis that the unified model improves both tasks over single-task models is **not supported**. The dual-head model matches the single-task models on both tasks. Its benefit is practical: one network (5.88 M parameters) instead of two.
 
 ### 4.4 Efficiency
 - Detection + segmentation, batch 1: 107 ms per case on a T4 GPU and 2.23 s on a local 12-core CPU.
+- The single-task models take 69 ms (`segonly`, segmentation pass) and 28 ms (`clsonly`, detection pass): 97 ms together.
+- The dual-head model is therefore **not faster** than running two separate models. It runs the shared encoder twice, once with T1 + T2 for detection and once with all 4 sequences for segmentation, so no computation is shared at inference. The saving is in parameters and deployment (one checkpoint), not in time.
 
 ## 5. Explainability and shortcut analysis (`reports/xai_notes.md`)
 Counterfactual controls on val (`main`; `noattn` agrees):
@@ -111,7 +136,7 @@ Grad-CAM++:
 5. **Training split into sessions with a memory budget.** Engineering only; it changes no result.
 6. **Added counterfactual controls** (mirroring, insertion, sham, erosion), on val only. Insertion and sham were approved by the owner and their rules fixed before the runs.
 7. **SHAP and LIME (proposal timeline) not done in PLAN.** They are designed into PLAN2 with a faithfulness comparison.
-8. **Hypothesis wording ("significantly improve", "superior").** The attention-gate part is not supported. The dual-head vs single-task part is PENDING.
+8. **Hypothesis wording ("significantly improve", "superior").** Not supported: attention gates make no meaningful difference, and the dual-head model matches but does not beat the single-task models (section 4.3).
 
 ## 8. Limitations
 - Single seed.

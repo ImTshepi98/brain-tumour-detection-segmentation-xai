@@ -125,14 +125,16 @@ def tables(runs, split, cpu=None):
                 L.append(f"| {k} | {reg} | {f(a['mean'])} ± {f(a['sd'])} | {f(a['median'])} | "
                          f"{f(h['mean'], 1)} ± {f(h['sd'], 1)} | {f(h['median'], 1)} | {a['n']} |")
     L += paired_dsc(runs, split)
-    L += ["", "### Inference time (batch 1, after warm-up; detection + segmentation pass)", "",
-          "| run | ms per case | hardware |", "|---|---|---|"]
+    L += ["", "### Inference time (batch 1, after warm-up; the passes each run was trained for)", "",
+          "| run | passes | ms per case | hardware |", "|---|---|---|---|"]
     for k, r in have.items():
         i = r.get("inference", {})
-        L.append(f"| {k} | {f(i.get('ms_per_case_mean'), 1)} ± {f(i.get('ms_per_case_sd'), 1)} | {i.get('hardware')} |")
+        passes = " + ".join(n for n, on in (("detection", r["detection"]), ("segmentation", r.get("segmentation"))) if on)
+        L.append(f"| {k} | {passes} | {f(i.get('ms_per_case_mean'), 1)} ± {f(i.get('ms_per_case_sd'), 1)} | "
+                 f"{i.get('hardware')} |")
     for k, pth in (cpu or {}).items():  # local CPU timing (src/cpu_timing.py), same routine on GUI cases
         i = json.loads(Path(pth).read_text())
-        L.append(f"| {k} (local CPU, n={i['n']}) | {f(i['ms_per_case_mean'], 1)} ± {f(i['ms_per_case_sd'], 1)} | "
+        L.append(f"| {k} (local CPU, n={i['n']}) | detection + segmentation | {f(i['ms_per_case_mean'], 1)} ± {f(i['ms_per_case_sd'], 1)} | "
                  f"{i['hardware']} |")
     ctl = {k: r["controls"] for k, r in have.items() if r.get("controls")}
     if ctl:

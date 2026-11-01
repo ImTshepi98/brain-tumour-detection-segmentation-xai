@@ -32,12 +32,17 @@ protocols, preprocessing history, consistent with the Phase 3 result that a simp
 separates the cohorts with AUROC 1.000, `reports/domain_gap.md`; peritumoural changes outside the WT
 mask, such as mass effect, may also contribute). For healthy scans, inserting tumour tissue is enough
 to flip the decision. So the val (and expected test) scores cannot be read as tumour detection alone,
-but the model is not blind to tumours either.
+but the model is not blind to tumours either: the sham control below shows the insertion effect comes
+almost entirely from tumour appearance.
 
-Open alternative for the insertion result: the pasted patch comes from a BraTS scan, so it may flip
-the model through BraTS-specific texture/noise rather than through tumour appearance (mean/SD are
-matched, texture is not). A sham insertion (same-shaped healthy BraTS tissue, same matching) would
-separate the two; not run yet.
+**Sham insertion (is it the tumour or the BraTS patch?).** Same hosts, donors, voxels and intensity
+matching, but pasting the donor's *healthy* mirror-side tissue (median 97% of the WT voxels, 81 mL):
+median logit change +0.24 (IQR +0.10 to +0.55) and 5 of 86 healthy scans cross the threshold,
+against +18.15 and 61 of 86 for the tumour. Paired on the same host and donor, the tumour moves the
+logit 16.1 more than the sham (median), and further in 84 of 86 pairs. Under the rule fixed before
+the run (DECISIONS 2026-11-01) this is classed as **mixed**: the logit criterion for 'tumour-specific'
+is met (0.24 < 4.5) but the crossing criterion is missed by one case (5 > 4). In size, the insertion
+effect is almost entirely due to tumour appearance, with a small patch (BraTS texture) effect.
 
 Heatmaps agree with 'not necessary': the detection Grad-CAM++ puts most of its mass outside the brain
 (median 70% for tumour cases, 58% for healthy), the tumour region gets less than its volume share

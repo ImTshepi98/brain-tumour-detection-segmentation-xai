@@ -311,7 +311,7 @@ def controls(model, cohort, device, thr):
 
 
 @torch.no_grad()
-def inference_time(model, cohort, device, n=10, warmup=3):
+def inference_time(model, cohort, device, n=10, warmup=3, cls=True, seg=True):
     def sync():
         if device.type == "cuda":
             torch.cuda.synchronize()
@@ -320,8 +320,10 @@ def inference_time(model, cohort, device, n=10, warmup=3):
     for k, x in enumerate(xs):
         sync()
         t = time.perf_counter()
-        model.forward_cls(x)
-        model.forward_seg(x)
+        if cls:
+            model.forward_cls(x)
+        if seg:
+            model.forward_seg(x)
         sync()
         if k >= warmup:
             times.append((time.perf_counter() - t) * 1000)
@@ -336,6 +338,17 @@ def figures(recs, res, out, tag):
     import matplotlib.pyplot as plt
     from sklearn.metrics import roc_curve
     out.mkdir(parents=True, exist_ok=True)
+    seg = [r for r in recs if "dsc_WT" in r]
+    if seg:
+        fig, ax = plt.subplots(figsize=(4, 3))
+        ax.boxplot([[r[f"dsc_{n}"] for r in seg] for n in metrics.REGIONS])
+        ax.set_xticks([1, 2, 3], list(metrics.REGIONS))
+        ax.set(ylabel="DSC", ylim=(0, 1), title=f"Segmentation ({tag}, n={len(seg)})")
+        fig.tight_layout()
+        fig.savefig(out / f"dsc_{tag}.png", dpi=110)
+        plt.close(fig)
+    if not res["detection"]:  # segonly: no detection figures
+        return
     y, p = [r["label"] for r in recs], [r["prob"] for r in recs]
     if len(set(y)) == 2:
         fpr, tpr, _ = roc_curve(y, p)
@@ -358,15 +371,6 @@ def figures(recs, res, out, tag):
     fig.tight_layout()
     fig.savefig(out / f"confusion_{tag}.png", dpi=110)
     plt.close(fig)
-    seg = [r for r in recs if "dsc_WT" in r]
-    if seg:
-        fig, ax = plt.subplots(figsize=(4, 3))
-        ax.boxplot([[r[f"dsc_{n}"] for r in seg] for n in metrics.REGIONS])
-        ax.set_xticks([1, 2, 3], list(metrics.REGIONS))
-        ax.set(ylabel="DSC", ylim=(0, 1), title=f"Segmentation ({tag}, n={len(seg)})")
-        fig.tight_layout()
-        fig.savefig(out / f"dsc_{tag}.png", dpi=110)
-        plt.close(fig)
     g = {k: v for k, v in res["groups"].items() if k.startswith("ixi_") and v["n"]}
     fig, ax = plt.subplots(figsize=(6, 3))
     names = list(g)
@@ -381,8 +385,11 @@ def figures(recs, res, out, tag):
     plt.close(fig)
 
 
-def evaluate(model, cohort, device, thr, ages, band=(40, 75), seg=True, bs=2):
+def evaluate(model, cohort, device, thr, ages, band=(40, 75), seg=True, bs=2, det=True):
     recs = predict(model, cohort, device, bs, seg)
+    if not det:  # no detection head trained (segonly): report segmentation only
+        return recs, dict(n=len(recs), detection={}, detection_ci={}, groups={},
+                          segmentation=seg_summary(recs) if seg else {})
     y, p = [r["label"] for r in recs], [r["prob"] for r in recs]
     det = metrics.detection(y, p, thr)
     return recs, dict(n=len(recs), detection=det, detection_ci=bootstrap(y, p, thr), groups=groups(recs, thr, ages, band),
@@ -437,6 +444,8 @@ def main(argv=None):
     model, st = load_checkpoint(args.ckpt, device)
     cfg = st["config"]
     seg = cfg["loss"]["w_seg"] > 0
+    det = cfg["loss"]["w_cls"] > 0  # segonly: the untrained detection head is never reported
+    assert det or not args.controls, "controls test the detection head; this run has none"
     tag = args.tag or args.split
 
     if args.split == "test":
@@ -454,7 +463,10 @@ def main(argv=None):
                             border=cfg["border"], allow_test=args.split == "test")
     ages = read_ages(args.ages)
 
-    if args.split == "val":
+    if args.split == "val" and not det:
+        recs, res = evaluate(model, cohort, device, None, ages, tuple(args.band), seg, det=False)
+        thr, how = None, "none (no detection head trained)"
+    elif args.split == "val":
         recs = predict(model, cohort, device, seg=seg)
         y, p = [r["label"] for r in recs], [r["prob"] for r in recs]
         if args.threshold is not None:
@@ -467,11 +479,14 @@ def main(argv=None):
                    groups=groups(recs, thr, ages, tuple(args.band)), segmentation=seg_summary(recs) if seg else {},
                    detection_at_0_5=metrics.detection(y, p, 0.5))
     else:
-        recs, res = evaluate(model, cohort, device, thr, ages, tuple(args.band), seg)
-        how = "frozen_from_val"
+        recs, res = evaluate(model, cohort, device, thr, ages, tuple(args.band), seg, det=det)
+        how = "frozen_from_val" if det else "none (no detection head trained)"
     res.update(split=args.split, threshold=thr, threshold_rule=how, ckpt=str(args.ckpt), epoch=st["epoch"],
                protocol_hash=st["protocol_hash"], run=cfg.get("name"), border=cfg["border"],
-               inference=inference_time(model, cohort, device))
+               inference=inference_time(model, cohort, device, cls=det, seg=seg))
+    if not det:
+        for r in recs:
+            r.pop("prob", None)
     if args.controls:
         assert args.split == "val"
         crow, res["controls"] = controls(model, cohort, device, thr)

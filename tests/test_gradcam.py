@@ -73,3 +73,11 @@ def test_explain_debug(tmp_path):
     assert r["meta"]["n"] > 0 and r["meta"]["overlay_cases"]
     assert (tmp_path / "xai_metrics_val.md").exists()
     assert all((tmp_path / "overlays" / f"{c}.png").exists() for c in r["meta"]["overlay_cases"])
+
+
+def test_select_cases_without_detection():
+    # segonly: cases_<split>.csv has no prob column and the threshold is None
+    cases = [dict(id=f"B{i}", label=1, dsc_WT=str(d)) for i, d in enumerate([0.9, 0.1, 0.5])]
+    cases += [dict(id="H1", label=0, dsc_WT=""), dict(id="H0", label=0, dsc_WT="")]
+    got = explain.select_cases(cases, {"H0": 50.0, "H1": 80.0}, thr=None)
+    assert got[:3] == ["B0", "B2", "B1"] and set(got[3:]) == {"H0", "H1"}

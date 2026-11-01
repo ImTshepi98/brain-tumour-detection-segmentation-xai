@@ -74,9 +74,10 @@ def select_cases(cases, ages, band=(40, 75), thr=0.5, n=6):
     one healthy inside and one outside the age band."""
     br = sorted([r for r in cases if int(r["label"]) == 1 and r.get("dsc_WT") not in (None, "")],
                 key=lambda r: float(r["dsc_WT"]))
-    hl = sorted([r for r in cases if int(r["label"]) == 0], key=lambda r: float(r["prob"]))
-    fp = [r for r in hl if float(r["prob"]) >= thr][-1:]
-    fn = [r for r in br if float(r["prob"]) < thr][:1]
+    det = thr is not None and all(r.get("prob") not in (None, "") for r in cases)  # segonly: no detection
+    hl = sorted([r for r in cases if int(r["label"]) == 0], key=lambda r: float(r["prob"]) if det else r["id"])
+    fp = [r for r in hl if float(r["prob"]) >= thr][-1:] if det else []
+    fn = [r for r in br if float(r["prob"]) < thr][:1] if det else []
     pick = fp + fn
     if br:
         pick += [br[-1], br[len(br) // 2], br[0]]

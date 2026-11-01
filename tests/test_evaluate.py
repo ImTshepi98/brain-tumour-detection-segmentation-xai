@@ -150,6 +150,27 @@ def test_evaluate_val_then_test_once(tmp_path):
                  "--threshold-from", str(tmp_path / "results_val.json")])
 
 
+def test_segonly_reports_no_detection(tmp_path):
+    import train
+    d = ev._debug_setup(tmp_path / "base")
+    run = tmp_path / "segonly"
+    train.main(["--debug", "--out", str(run), "--set", "model.channels=[4,8,16,32,64]", "optim.epochs=1",
+                "loss.w_cls=0.0"])
+    paths = ["--ckpt", str(run / "best.pt"), "--brats-dir", str(d["brats_dir"]), "--ixi-dirs", str(d["ixi_dirs"][0]),
+             "--brats-sdt-dirs", str(d["brats_sdt_dirs"][0]), "--splits", str(d["splits"]), "--ages", str(d["ages"]),
+             "--no-count-check"]
+    out = tmp_path / "eval"
+    with pytest.raises(AssertionError, match="no detection|none"):
+        ev.main(paths + ["--out", str(out), "--controls"])
+    v = ev.main(paths + ["--out", str(out)])
+    assert v["detection"] == {} and v["groups"] == {} and v["threshold"] is None and v["segmentation"]
+    assert "prob" not in (out / "cases_val.csv").read_text().splitlines()[0].split(",")
+    assert not (out / "figures" / "roc_val.png").exists() and (out / "figures" / "dsc_val.png").exists()
+    t = ev.main(paths + ["--out", str(out), "--split", "test", "--confirm-test",
+                         "--threshold-from", str(out / "results_val.json")])
+    assert t["detection"] == {} and t["segmentation"] and t["threshold_rule"].startswith("none")
+
+
 def test_wilson_exact_at_ends():
     # n=48 (val site Guys) gave an upper bound a hair below 1.0 and crashed the error-bar figure
     assert all(ev.wilson(n, n)[1] == 1.0 and ev.wilson(0, n)[0] == 0.0 for n in range(1, 300))

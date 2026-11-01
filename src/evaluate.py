@@ -95,8 +95,11 @@ def predict(model, cohort, device, bs=2, seg=True):
 
 # ---------------------------------------------------------------- detection statistics
 def choose_threshold(labels, probs):
-    """Max F1 over candidate thresholds (the observed probabilities and 0.5); ties -> closest to 0.5."""
-    cands = sorted(set(np.round(np.asarray(probs, float), 6)) | {0.5})
+    """Max F1 over candidate thresholds (midpoints between consecutive distinct probabilities, and 0.5);
+    ties -> closest to 0.5. No rounding: main-r5 v1 rounded candidates to 6 decimals, which put the cut
+    just below a healthy case's probability and just above a tumour case's (see DECISIONS 2026-11-01)."""
+    u = np.unique(np.asarray(probs, float))
+    cands = sorted(set(((u[:-1] + u[1:]) / 2).tolist()) | {0.5})
     scored = [(metrics.detection(labels, probs, t)["f1"], -abs(t - 0.5), t) for t in cands]
     return float(max(scored)[2])
 

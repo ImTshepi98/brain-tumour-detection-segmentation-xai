@@ -26,8 +26,12 @@ def test_choose_threshold_max_f1():
     y = [0, 0, 0, 1, 1, 1]
     p = [0.1, 0.55, 0.6, 0.7, 0.8, 0.9]
     t = ev.choose_threshold(y, p)
-    assert t == pytest.approx(0.7) and ev.metrics.detection(y, p, t)["f1"] == 1.0
+    assert t == pytest.approx(0.65) and ev.metrics.detection(y, p, t)["f1"] == 1.0  # midpoint of the gap
     assert ev.choose_threshold([0, 0, 1, 1], [0.1, 0.7, 0.6, 0.9]) == 0.5  # F1 tie: closest to 0.5
+    # main-r5 val: separable, but 6-decimal rounding put the cut on the wrong side of both edge cases
+    y, p = [0, 0, 1, 1], [1.7e-05, 0.0002614514378365129, 0.03331190347671509, 0.99999]
+    t = ev.choose_threshold(y, p)
+    assert p[1] < t < p[2] and ev.metrics.detection(y, p, t)["f1"] == 1.0
 
 
 def test_groups_split_ixi_by_band_and_site():

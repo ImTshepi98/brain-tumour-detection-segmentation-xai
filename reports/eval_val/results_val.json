@@ -1,0 +1,226 @@
+{
+  "n": 274,
+  "detection": {
+    "threshold": 0.0167866774572758,
+    "tp": 188,
+    "fp": 0,
+    "tn": 86,
+    "fn": 0,
+    "recall": 1.0,
+    "precision": 1.0,
+    "f1": 1.0,
+    "specificity": 1.0,
+    "auroc": 1.0
+  },
+  "detection_ci": {
+    "recall": [
+      1.0,
+      1.0
+    ],
+    "precision": [
+      1.0,
+      1.0
+    ],
+    "f1": [
+      1.0,
+      1.0
+    ],
+    "specificity": [
+      1.0,
+      1.0
+    ],
+    "auroc": [
+      0.9999999999999999,
+      1.0
+    ]
+  },
+  "groups": {
+    "ixi_in_band": {
+      "n": 54,
+      "tn": 54,
+      "fp": 0,
+      "specificity": 1.0,
+      "fpr": 0.0,
+      "specificity_ci": [
+        0.9335841332189981,
+        1.0
+      ]
+    },
+    "ixi_below_band": {
+      "n": 25,
+      "tn": 25,
+      "fp": 0,
+      "specificity": 1.0,
+      "fpr": 0.0,
+      "specificity_ci": [
+        0.8668035060468213,
+        1.0
+      ]
+    },
+    "ixi_above_band": {
+      "n": 3,
+      "tn": 3,
+      "fp": 0,
+      "specificity": 1.0,
+      "fpr": 0.0,
+      "specificity_ci": [
+        0.43849391955098227,
+        1.0
+      ]
+    },
+    "ixi_no_age": {
+      "n": 4,
+      "tn": 4,
+      "fp": 0,
+      "specificity": 1.0,
+      "fpr": 0.0,
+      "specificity_ci": [
+        0.5100999795960008,
+        1.0
+      ]
+    },
+    "ixi_site_Guys": {
+      "n": 48,
+      "tn": 48,
+      "fp": 0,
+      "specificity": 1.0,
+      "fpr": 0.0,
+      "specificity_ci": [
+        0.9258973488472576,
+        1.0
+      ]
+    },
+    "ixi_site_HH": {
+      "n": 27,
+      "tn": 27,
+      "fp": 0,
+      "specificity": 1.0,
+      "fpr": 0.0,
+      "specificity_ci": [
+        0.8754409628553641,
+        1.0
+      ]
+    },
+    "ixi_site_IOP": {
+      "n": 11,
+      "tn": 11,
+      "fp": 0,
+      "specificity": 1.0,
+      "fpr": 0.0,
+      "specificity_ci": [
+        0.7411599827511859,
+        1.0
+      ]
+    },
+    "ixi_all": {
+      "n": 86,
+      "tn": 86,
+      "fp": 0,
+      "specificity": 1.0,
+      "fpr": 0.0,
+      "specificity_ci": [
+        0.9572402984808819,
+        1.0
+      ]
+    },
+    "brats_all": {
+      "n": 188,
+      "tp": 188,
+      "fn": 0,
+      "recall": 1.0,
+      "recall_ci": [
+        0.9799751461622506,
+        1.0
+      ]
+    }
+  },
+  "segmentation": {
+    "dsc_ET": {
+      "mean": 0.8196077800759922,
+      "sd": 0.24954356318089058,
+      "median": 0.9112415292091303,
+      "n": 188
+    },
+    "hd95_ET": {
+      "mean": 20.590701123704303,
+      "sd": 74.98307816726899,
+      "median": 2.0,
+      "n": 188
+    },
+    "dsc_TC": {
+      "mean": 0.8692045286650039,
+      "sd": 0.20027378925556738,
+      "median": 0.9487447071383162,
+      "n": 188
+    },
+    "hd95_TC": {
+      "mean": 13.0347020284673,
+      "sd": 53.79992157198211,
+      "median": 2.0,
+      "n": 188
+    },
+    "dsc_WT": {
+      "mean": 0.9141788666441427,
+      "sd": 0.1043474678278171,
+      "median": 0.9469271958847529,
+      "n": 188
+    },
+    "hd95_WT": {
+      "mean": 6.492646604142291,
+      "sd": 10.6004259974874,
+      "median": 2.8284270763397217,
+      "n": 188
+    }
+  },
+  "detection_at_0_5": {
+    "threshold": 0.5,
+    "tp": 187,
+    "fp": 0,
+    "tn": 86,
+    "fn": 1,
+    "recall": 0.9946808510638298,
+    "precision": 1.0,
+    "f1": 0.9973333333333333,
+    "specificity": 1.0,
+    "auroc": 1.0
+  },
+  "split": "val",
+  "threshold": 0.0167866774572758,
+  "threshold_rule": "max_f1_on_val",
+  "ckpt": "/kaggle/input/notebooks/leweletp/brats-dual-train-main-r5/run/best.pt",
+  "epoch": 32,
+  "protocol_hash": "948372a86b6ea63d13fdbf086bdf6bf9f2d4b8f12445865df0968e7b1144b655",
+  "run": "main",
+  "border": 0.0,
+  "inference": {
+    "ms_per_case_mean": 87.16726649997781,
+    "ms_per_case_sd": 1.0117495201260094,
+    "n": 10,
+    "device": "cuda",
+    "hardware": "Tesla T4"
+  },
+  "controls": {
+    "tumour_mirrored_brats": {
+      "n": 188,
+      "mean_change": -0.007431418595320367,
+      "median_change": -4.172325134277344e-07,
+      "above_thr_before": 188,
+      "above_thr_after": 186
+    },
+    "eroded_ixi": {
+      "n": 86,
+      "mean_change": 0.011576994239338853,
+      "median_change": 8.44103965391696e-06,
+      "above_thr_before": 0,
+      "above_thr_after": 2
+    },
+    "eroded_brats": {
+      "n": 188,
+      "mean_change": 0.005106101862769177,
+      "median_change": 1.1920928955078125e-07,
+      "above_thr_before": 188,
+      "above_thr_after": 188
+    },
+    "mirror_valid_frac_median": 0.9828620837516693
+  }
+}

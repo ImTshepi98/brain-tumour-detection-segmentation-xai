@@ -1,0 +1,190 @@
+{
+  "n": 275,
+  "detection": {
+    "threshold": 0.0167866774572758,
+    "tp": 188,
+    "fp": 0,
+    "tn": 87,
+    "fn": 0,
+    "recall": 1.0,
+    "precision": 1.0,
+    "f1": 1.0,
+    "specificity": 1.0,
+    "auroc": 1.0
+  },
+  "detection_ci": {
+    "recall": [
+      1.0,
+      1.0
+    ],
+    "precision": [
+      1.0,
+      1.0
+    ],
+    "f1": [
+      1.0,
+      1.0
+    ],
+    "specificity": [
+      1.0,
+      1.0
+    ],
+    "auroc": [
+      0.9999999999999999,
+      1.0
+    ]
+  },
+  "groups": {
+    "ixi_in_band": {
+      "n": 53,
+      "tn": 53,
+      "fp": 0,
+      "specificity": 1.0,
+      "fpr": 0.0,
+      "specificity_ci": [
+        0.9324156955469234,
+        1.0
+      ]
+    },
+    "ixi_below_band": {
+      "n": 27,
+      "tn": 27,
+      "fp": 0,
+      "specificity": 1.0,
+      "fpr": 0.0,
+      "specificity_ci": [
+        0.8754409628553641,
+        1.0
+      ]
+    },
+    "ixi_above_band": {
+      "n": 4,
+      "tn": 4,
+      "fp": 0,
+      "specificity": 1.0,
+      "fpr": 0.0,
+      "specificity_ci": [
+        0.5100999795960008,
+        1.0
+      ]
+    },
+    "ixi_no_age": {
+      "n": 3,
+      "tn": 3,
+      "fp": 0,
+      "specificity": 1.0,
+      "fpr": 0.0,
+      "specificity_ci": [
+        0.43849391955098227,
+        1.0
+      ]
+    },
+    "ixi_site_Guys": {
+      "n": 48,
+      "tn": 48,
+      "fp": 0,
+      "specificity": 1.0,
+      "fpr": 0.0,
+      "specificity_ci": [
+        0.9258973488472576,
+        1.0
+      ]
+    },
+    "ixi_site_HH": {
+      "n": 28,
+      "tn": 28,
+      "fp": 0,
+      "specificity": 1.0,
+      "fpr": 0.0,
+      "specificity_ci": [
+        0.8793527963418923,
+        1.0
+      ]
+    },
+    "ixi_site_IOP": {
+      "n": 11,
+      "tn": 11,
+      "fp": 0,
+      "specificity": 1.0,
+      "fpr": 0.0,
+      "specificity_ci": [
+        0.7411599827511859,
+        1.0
+      ]
+    },
+    "ixi_all": {
+      "n": 87,
+      "tn": 87,
+      "fp": 0,
+      "specificity": 1.0,
+      "fpr": 0.0,
+      "specificity_ci": [
+        0.957711004649852,
+        1.0
+      ]
+    },
+    "brats_all": {
+      "n": 188,
+      "tp": 188,
+      "fn": 0,
+      "recall": 1.0,
+      "recall_ci": [
+        0.9799751461622506,
+        1.0
+      ]
+    }
+  },
+  "segmentation": {
+    "dsc_ET": {
+      "mean": 0.8489030075435384,
+      "sd": 0.21514506605634726,
+      "median": 0.9202623353296607,
+      "n": 188
+    },
+    "hd95_ET": {
+      "mean": 18.301616954854193,
+      "sd": 70.56888345243004,
+      "median": 2.0,
+      "n": 188
+    },
+    "dsc_TC": {
+      "mean": 0.8998708339749317,
+      "sd": 0.1693010592711931,
+      "median": 0.9568185775249844,
+      "n": 188
+    },
+    "hd95_TC": {
+      "mean": 7.222322632048993,
+      "sd": 28.629100163119812,
+      "median": 2.0,
+      "n": 188
+    },
+    "dsc_WT": {
+      "mean": 0.920683772419059,
+      "sd": 0.08916687555216375,
+      "median": 0.9481329572702795,
+      "n": 188
+    },
+    "hd95_WT": {
+      "mean": 6.783261598424708,
+      "sd": 10.976275299700342,
+      "median": 2.8284270763397217,
+      "n": 188
+    }
+  },
+  "split": "test",
+  "threshold": 0.0167866774572758,
+  "threshold_rule": "frozen_from_val",
+  "ckpt": "/kaggle/input/notebooks/leweletp/brats-dual-train-main-r5/run/best.pt",
+  "epoch": 32,
+  "protocol_hash": "948372a86b6ea63d13fdbf086bdf6bf9f2d4b8f12445865df0968e7b1144b655",
+  "run": "main",
+  "border": 0.0,
+  "inference": {
+    "ms_per_case_mean": 107.44561410000415,
+    "ms_per_case_sd": 0.9152165269154946,
+    "n": 10,
+    "device": "cuda",
+    "hardware": "Tesla T4"
+  }
+}

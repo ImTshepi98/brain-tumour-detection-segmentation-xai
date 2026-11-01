@@ -2,8 +2,9 @@
 
 Model: `main` best.pt (epoch 32 of 40; protocol 948372a86b6e; shared SynthStrip boundary, border 0 mm).
 Numbers: `reports/tables.md` (Grad-CAM++ and controls sections) and `reports/eval_val/xai_metrics_val.md`.
-Overlays: `reports/eval_val/overlays/`. This section covers **validation** only; the test-set overlays
-and metrics (PLAN Phase 7: 6 test cases) are added after the single test read.
+Overlays: `reports/eval_val/overlays/` (val) and `reports/eval_test/overlays/` (test, the PLAN Phase 7
+cases). The test split was read once (1 Nov, `eval-main-r5-test`) with the checkpoint and threshold
+frozen from val.
 
 ## Validation (n = 274: 188 BraTS, 86 IXI)
 
@@ -74,3 +75,32 @@ worst WT DSC plus one healthy case inside and one outside the 40-75 age band:
 | IXI517 | healthy, IOP | 0.000 | n/a | detection map peaks outside the head |
 
 Val segmentation failures are rare: 3 of 188 cases have WT DSC < 0.5 (01035, 00493, 01490).
+
+## Test (n = 275: 188 BraTS, 87 IXI; read once)
+
+The test results repeat the val pattern (all numbers in `reports/tables.md`, TEST split):
+
+- **Detection:** 188/188 tumours and 87/87 healthy scans at the frozen threshold 0.0168 (F1 =
+  AUROC = 1.000), with a wide margin: lowest tumour probability 0.99994, highest healthy 0.0011.
+  As on val, this reflects the redundant cues described above (the counterfactual controls are
+  val-only by design, PLAN 6), so it is not evidence of tumour detection on its own.
+- **Detection heatmaps:** median 70% of the mass outside the brain for tumour cases (58% healthy),
+  tumour ratio 0.34, shell ratio 0.25 / 0.35, deletion of the top CAM voxels changes the probability
+  no more than random deletion; the same as val.
+- **Segmentation:** WT DSC 0.921, TC 0.900, ET 0.849 (means; medians 0.948 / 0.957 / 0.920), slightly
+  above val; heatmaps on the tumour (median tumour ratio 7.9). 2 of 188 cases have WT DSC < 0.5.
+
+### Selected test cases
+
+PLAN Phase 7 asks for 6 test cases including any false positives/negatives. There were none, so the
+selection rule (fixed in `explain.py` before the read) gives 5: best / median / worst WT DSC and one
+healthy case inside and one outside the age band.
+
+| case | role | tumour prob | WT / TC / ET DSC | note |
+|---|---|---|---|---|
+| BraTS2021_00809 | best WT | 1.000 | 0.982 / 0.976 / 0.970 | |
+| BraTS2021_01043 | median WT | 1.000 | 0.948 / 0.982 / 0.937 | |
+| BraTS2021_01293 | worst WT | 1.000 | 0.351 / 0.081 / 0.400 | large cystic tumour, dark on T1 and FLAIR; only rim fragments segmented; the detection map is cold over the tumour |
+| IXI225 | healthy, Guys | 0.000 | n/a | |
+| IXI071 | healthy, Guys | 0.000 | n/a | |
+

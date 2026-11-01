@@ -34,18 +34,22 @@ def _ellipsoid(shape, centre, radii):
     return d <= 1.0
 
 
-def native_seg(shape, rng):
-    """BraTS-native labels inside a brain: 1 NCR, 2 ED, 4 ET (0 elsewhere)."""
+def native_seg(shape, rng, lateral=False):
+    """BraTS-native labels inside a brain: 1 NCR, 2 ED, 4 ET (0 elsewhere). lateral=True puts a smaller
+    tumour in one hemisphere (axis 0), so the other hemisphere is tumour-free (PLAN2 dry runs)."""
     seg = np.zeros(shape, np.uint8)
     c = [s // 2 + int(rng.integers(-s // 8, s // 8 + 1)) for s in shape]
     r = max(2, min(shape) // 6)
+    if lateral:
+        r = max(2, min(shape) // 8)
+        c[0] = int(round(shape[0] * (0.22 if rng.random() < 0.5 else 0.78)))
     seg[_ellipsoid(shape, c, (r * 1.6,) * 3)] = 2
     seg[_ellipsoid(shape, c, (r * 1.0,) * 3)] = 4
     seg[_ellipsoid(shape, c, (r * 0.5,) * 3)] = 1
     return seg
 
 
-def make_case(shape=(32, 32, 32), tumour=True, healthy_t1t2_only=None, rng=None):
+def make_case(shape=(32, 32, 32), tumour=True, healthy_t1t2_only=None, rng=None, lateral=False):
     """Return (x float16 (4,*shape), bits uint8 shape, brain bool shape).
 
     healthy_t1t2_only defaults to (not tumour): IXI-like cases have channels 2, 3 zero.
@@ -58,7 +62,7 @@ def make_case(shape=(32, 32, 32), tumour=True, healthy_t1t2_only=None, rng=None)
     for ch in range(4):
         v = rng.normal(0.0, 1.0, shape).astype(np.float32)
         x[ch][brain] = v[brain]
-    seg = native_seg(shape, rng) * brain if tumour else np.zeros(shape, np.uint8)
+    seg = native_seg(shape, rng, lateral) * brain if tumour else np.zeros(shape, np.uint8)
     if tumour:
         x[:, seg > 0] += 2.0
     if healthy_t1t2_only:
@@ -67,12 +71,12 @@ def make_case(shape=(32, 32, 32), tumour=True, healthy_t1t2_only=None, rng=None)
     return x.astype(np.float16), seg_to_bits(seg), brain
 
 
-def make_cohort(n_brats=6, n_ixi=6, shape=(32, 32, 32), seed=SEED):
+def make_cohort(n_brats=6, n_ixi=6, shape=(32, 32, 32), seed=SEED, lateral=False):
     """List of dicts with id/source/label/has_seg/x/bits, BraTS first then IXI."""
     rng = np.random.default_rng(seed)
     out = []
     for i in range(n_brats):
-        x, bits, _ = make_case(shape, tumour=True, rng=rng)
+        x, bits, _ = make_case(shape, tumour=True, rng=rng, lateral=lateral)
         out.append(dict(id=f"BraTS2021_{i:05d}", source="brats", label=1, has_seg=1, x=x, bits=bits))
     for i in range(n_ixi):
         x, bits, _ = make_case(shape, tumour=False, rng=rng)
@@ -145,7 +149,7 @@ def signed_distance(brain, spacing=2.0):
     return (spacing * (ndi.distance_transform_edt(~brain) - ndi.distance_transform_edt(brain))).astype(np.float16)
 
 
-def write_fake_2mm(out_dir, n_brats=8, n_ixi=8, shape=(32, 32, 32), seed=SEED):
+def write_fake_2mm(out_dir, n_brats=8, n_ixi=8, shape=(32, 32, 32), seed=SEED, lateral=False):
     """Write a miniature copy of the Kaggle 2 mm layout for training dry runs:
     brats2mm/{x,y}/<id>.npy + crop.json, ixi2mm/{x,sdt}/<id>.npy + template.json,
     sdt_brats/sdt/<id>.npy + summary_shard0.json, splits.csv (train/val/test per cohort).
@@ -158,7 +162,7 @@ def write_fake_2mm(out_dir, n_brats=8, n_ixi=8, shape=(32, 32, 32), seed=SEED):
     (idir / "template.json").write_text("{}")
     (sd / "summary_shard0.json").write_text("{}")
     rows = []
-    for i, c in enumerate(make_cohort(n_brats, n_ixi, shape, seed)):
+    for i, c in enumerate(make_cohort(n_brats, n_ixi, shape, seed, lateral)):
         split = ("train", "train", "val", "test")[i % 4]
         brain = (c["x"] != 0).any(0)
         if c["source"] == "brats":

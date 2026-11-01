@@ -1,0 +1,48 @@
+{
+  "midline": 41,
+  "mirror_dice": 0.9830430057778591,
+  "width": 48,
+  "border": 0.0,
+  "axis_length": 96,
+  "min_pos_voxels": 125,
+  "margin_voxels": 2,
+  "splits": {
+    "train": {
+      "counts": {
+        "train|brats|excluded": 252,
+        "train|brats|positive": 1179,
+        "train|brats|negative": 319,
+        "train|ixi|negative": 808
+      },
+      "cells": {
+        "B+r": 1179,
+        "B-r": 319,
+        "I-r": 808
+      },
+      "crop_loss_median": 0.0,
+      "crop_loss_max": 0.0
+    },
+    "val": {
+      "counts": {
+        "val|brats|positive": 249,
+        "val|brats|negative": 67,
+        "val|brats|excluded": 60,
+        "val|ixi|negative": 172
+      },
+      "cells": {
+        "B+r": 249,
+        "B-r": 67,
+        "I-r": 172
+      },
+      "crop_loss_median": 0.0,
+      "crop_loss_max": 0.0,
+      "pairs": {
+        "B+p": 67,
+        "B-s": 67,
+        "I+p": 172,
+        "I-s": 172
+      },
+      "paste_ml_median": 65.112
+    }
+  }
+}

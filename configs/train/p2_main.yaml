@@ -1,0 +1,28 @@
+# PLAN2 P3 p2-main: shortcut-controlled model on hemispheres (PLAN2 sections 2-3; checks: tag plan2-prereg)
+name: p2-main
+seed: 42
+border: required        # mm; PLAN's shared SynthStrip boundary, b = 0
+midline: required       # cut index from the P1 kernel (p1_summary.json)
+width: 48
+batch_size: 4           # one draw per group B+, B-, I+, I-
+val_batch_size: 4
+data_parallel: true
+data:
+  samples_per_epoch: 1280   # 320 steps, as PLAN's 1279 draws per epoch
+  limit_train: 0
+  limit_val: 0
+  workers: 4
+augment: {scale: 0.1, shift: 0.1, noise: 0.05, flip: true, flip_axes: [1, 2], erode_max: 2}
+model:
+  channels: [16, 32, 64, 128, 256]
+  attention: true
+  cls_hidden: 64
+  cls_dropout: 0.0
+  adv: false
+loss: {w_cls: 0.5, w_adv: 0.0}
+optim:
+  lr: 3.0e-4
+  weight_decay: 1.0e-5
+  grad_clip: 1.0
+  warmup_epochs: 0
+  epochs: 40            # target; set from the smoke test (PLAN2 P3)

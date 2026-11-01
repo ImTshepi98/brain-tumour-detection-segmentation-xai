@@ -142,14 +142,16 @@ def sample_epoch(labels, n, mode="balanced", seed=SEED, epoch=0):
     return np.array(out, np.int64)
 
 
-def augment(x, target, gen, scale=0.1, shift=0.1, noise=0.05, flip=True):
-    """GPU augmentation of a batch (returns new tensors); `gen` is a torch.Generator on x.device."""
+def augment(x, target, gen, scale=0.1, shift=0.1, noise=0.05, flip=True, flip_axes=(0, 1, 2)):
+    """GPU augmentation of a batch (returns new tensors); `gen` is a torch.Generator on x.device.
+    flip_axes limits which spatial axes may flip (PLAN2 hemispheres: not left-right, axis 0); the random
+    draws are the same either way."""
     b, c = x.shape[:2]
     if flip:
         f = torch.rand(b, 3, generator=gen, device=x.device) < 0.5
         x, target = x.clone(), target.clone()
         for i in range(b):
-            dims = [d + 1 for d in range(3) if f[i, d]]
+            dims = [d + 1 for d in range(3) if f[i, d] and d in flip_axes]
             if dims:
                 x[i] = x[i].flip(dims)
                 target[i] = target[i].flip(dims)

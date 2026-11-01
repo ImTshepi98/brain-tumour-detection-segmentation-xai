@@ -1,0 +1,101 @@
+{
+ "panels": [
+  {
+   "file": "00_Iposp.png",
+   "cell": "I+p",
+   "host_id": "IXI293:R",
+   "donor_id": "BraTS2021_00824:R",
+   "frac": 1.0,
+   "ml": 15.824
+  },
+  {
+   "file": "01_Iposp.png",
+   "cell": "I+p",
+   "host_id": "IXI070:R",
+   "donor_id": "BraTS2021_00538:L",
+   "frac": 0.9883300535444602,
+   "ml": 172.768
+  },
+  {
+   "file": "02_Iposp.png",
+   "cell": "I+p",
+   "host_id": "IXI426:R",
+   "donor_id": "BraTS2021_01048:R",
+   "frac": 0.9648742411101474,
+   "ml": 53.4
+  },
+  {
+   "file": "03_Iposp.png",
+   "cell": "I+p",
+   "host_id": "IXI524:R",
+   "donor_id": "BraTS2021_00406:L",
+   "frac": 0.9603504436706728,
+   "ml": 68.4
+  },
+  {
+   "file": "04_Bposp.png",
+   "cell": "B+p",
+   "host_id": "BraTS2021_00321:R",
+   "donor_id": "BraTS2021_01465:L",
+   "frac": 0.9606600371544094,
+   "ml": 140.656
+  },
+  {
+   "file": "05_Bposp.png",
+   "cell": "B+p",
+   "host_id": "BraTS2021_01397:R",
+   "donor_id": "BraTS2021_01607:L",
+   "frac": 0.8741092636579573,
+   "ml": 61.824
+  },
+  {
+   "file": "06_Inegs.png",
+   "cell": "I-s",
+   "host_id": "IXI360:R",
+   "donor_id": "BraTS2021_01182:R",
+   "frac": 0.12909718228867165,
+   "ml": 7.184
+  },
+  {
+   "file": "07_Inegs.png",
+   "cell": "I-s",
+   "host_id": "IXI642:L",
+   "donor_id": "BraTS2021_01244:L",
+   "frac": 0.07291666666666667,
+   "ml": 0.112
+  },
+  {
+   "file": "08_Inegs.png",
+   "cell": "I-s",
+   "host_id": "IXI484:L",
+   "donor_id": "BraTS2021_01141:L",
+   "frac": 0.0,
+   "ml": 0.0
+  },
+  {
+   "file": "09_Bnegs.png",
+   "cell": "B-s",
+   "host_id": "BraTS2021_01179:L",
+   "donor_id": "BraTS2021_01498:R",
+   "frac": 0.03281277417090717,
+   "ml": 1.496
+  },
+  {
+   "file": "10_Bnegs.png",
+   "cell": "B-s",
+   "host_id": "BraTS2021_01461:L",
+   "donor_id": "BraTS2021_00773:L",
+   "frac": 0.9253300330033003,
+   "ml": 89.72
+  },
+  {
+   "file": "11_Bnegs.png",
+   "cell": "B-s",
+   "host_id": "BraTS2021_00270:R",
+   "donor_id": "BraTS2021_01298:L",
+   "frac": 0.8973585520952225,
+   "ml": 88.056
+  }
+ ],
+ "visual_review_complete": false
+}

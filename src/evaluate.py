@@ -124,7 +124,7 @@ def wilson(k, n, z=1.96):
     d = 1 + z * z / n
     c = (p + z * z / (2 * n)) / d
     h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
-    return [c - h, c + h]
+    return [0.0 if k == 0 else c - h, 1.0 if k == n else c + h]  # exact at the ends (float rounding)
 
 
 def read_ages(path):
@@ -305,6 +305,7 @@ def figures(recs, res, out, tag):
     names = list(g)
     spec = [g[k]["specificity"] for k in names]
     err = np.array([[s - g[k]["specificity_ci"][0], g[k]["specificity_ci"][1] - s] for k, s in zip(names, spec)]).T
+    err = np.clip(err, 0, None)  # Wilson bounds can sit a hair inside an observed 1.0 (float rounding)
     ax.bar(range(len(names)), spec, yerr=err, capsize=3)
     ax.set_xticks(range(len(names)), [f"{k[4:]}\n(n={g[k]['n']})" for k in names], fontsize=7)
     ax.set(ylabel="specificity", ylim=(0, 1.05), title=f"IXI specificity by age band and site ({tag})")

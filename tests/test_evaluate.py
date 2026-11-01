@@ -85,3 +85,10 @@ def test_evaluate_val_then_test_once(tmp_path):
     with pytest.raises(AssertionError, match="second read"):
         ev.main(["--debug", "--out", str(tmp_path), "--split", "test", "--confirm-test",
                  "--threshold-from", str(tmp_path / "results_val.json")])
+
+
+def test_wilson_exact_at_ends():
+    # n=48 (val site Guys) gave an upper bound a hair below 1.0 and crashed the error-bar figure
+    assert all(ev.wilson(n, n)[1] == 1.0 and ev.wilson(0, n)[0] == 0.0 for n in range(1, 300))
+    lo, hi = ev.wilson(40, 48)
+    assert 0 < lo < 40 / 48 < hi < 1

@@ -53,11 +53,12 @@ def cell_rates(rows, probs, thr):
     return out
 
 
-def erode_batch(x, target, gen, max_iter=2):
+def erode_batch(x, target, gen, max_iter=2, fixed=False):
     """Random brain-boundary erosion of 0..max_iter voxels per sample (PLAN2 2.4). WT voxels are kept; each
     channel is re-z-scored over its remaining non-zero voxels (the preprocessing rule). The midline face is
     the array edge and max_pool pads with -inf, so the cut face itself is never eroded."""
-    k = torch.randint(0, max_iter + 1, (x.shape[0],), generator=gen, device=x.device)
+    k = (torch.full((x.shape[0],), max_iter, device=x.device) if fixed  # S8: exactly max_iter voxels
+         else torch.randint(0, max_iter + 1, (x.shape[0],), generator=gen, device=x.device))
     if not k.any():
         return x
     x = x.clone()

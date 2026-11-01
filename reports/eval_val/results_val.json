@@ -193,8 +193,8 @@
   "run": "main",
   "border": 0.0,
   "inference": {
-    "ms_per_case_mean": 87.16726649997781,
-    "ms_per_case_sd": 1.0117495201260094,
+    "ms_per_case_mean": 94.11844169999313,
+    "ms_per_case_sd": 0.9629464627598779,
     "n": 10,
     "device": "cuda",
     "hardware": "Tesla T4"
@@ -221,6 +221,15 @@
       "above_thr_before": 188,
       "above_thr_after": 188
     },
+    "tumour_inserted_ixi": {
+      "n": 86,
+      "mean_change": 0.6403959316852558,
+      "median_change": 0.996120297371931,
+      "above_thr_before": 0,
+      "above_thr_after": 61
+    },
+    "insert_inside_frac_median": 0.9969840857538668,
+    "insert_ml_median": 83.136,
     "mirror_valid_frac_median": 0.9828620837516693
   }
 }

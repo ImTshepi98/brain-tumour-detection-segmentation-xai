@@ -34,16 +34,20 @@ BraTS has no per-case age, so these groups show how age and site affect the nega
 
 | run | ms per case | hardware |
 |---|---|---|
-| main | 87.2 ± 1.0 | Tesla T4 |
+| main | 94.1 ± 1.0 | Tesla T4 |
 
 ### Controls (val): change in tumour probability
 
-| run | control | n | mean change | median change | above threshold before -> after |
-|---|---|---|---|---|---|
-| main | tumour_mirrored_brats | 188 | -0.007 | -0.000 | 188 -> 186 |
-| main | eroded_ixi | 86 | 0.012 | 0.000 | 0 -> 2 |
-| main | eroded_brats | 188 | 0.005 | 0.000 | 188 -> 188 |
-| main | mirror filled from valid contralateral tissue (median share) | | 0.983 | | |
+mirrored = BraTS tumour replaced by contralateral tissue (is the tumour needed?); inserted = a BraTS val tumour pasted into a healthy IXI scan, intensity-matched to the host (is the tumour enough?); eroded = brain mask shrunk by 1 voxel and re-z-scored (boundary cue).
+
+| run | control | n | mean change | median change | median logit change | above threshold before -> after |
+|---|---|---|---|---|---|---|
+| main | tumour_mirrored_brats | 188 | -0.007 | -0.000 | -0.14 | 188 -> 186 |
+| main | tumour_inserted_ixi | 86 | 0.640 | 0.996 | 18.15 | 0 -> 61 |
+| main | eroded_ixi | 86 | 0.012 | 0.000 | 1.23 | 0 -> 2 |
+| main | eroded_brats | 188 | 0.005 | 0.000 | 0.03 | 188 -> 188 |
+| main | mirror filled from valid contralateral tissue (median share) | | 0.983 | | | |
+| main | inserted tumour: median share inside host brain / median volume (mL) | | 0.997 | 83.1 | | |
 
 ### Grad-CAM++ checks (median per case)
 

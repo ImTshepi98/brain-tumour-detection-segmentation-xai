@@ -27,6 +27,29 @@ def load(d, split):
     return json.loads(p.read_text()) if p.exists() else None
 
 
+KEYS = {"tumour_mirrored_brats": ("1", "prob_mirrored"), "tumour_inserted_ixi": ("0", "prob_inserted"),
+        "eroded_ixi": ("0", "prob_eroded"), "eroded_brats": ("1", "prob_eroded")}
+
+
+def logit_changes(d, split):
+    """Median change in the detection logit per control, from controls_<split>.csv (probabilities near
+    0 or 1 hide large logit moves; float32 probabilities are clipped to [1e-7, 1 - 1e-7])."""
+    p = Path(d) / f"controls_{split}.csv"
+    if not p.exists():
+        return {}
+    import csv
+    import numpy as np
+    rows = list(csv.DictReader(open(p)))
+    lg = lambda v: np.log(np.clip(v, 1e-7, 1 - 1e-7) / (1 - np.clip(v, 1e-7, 1 - 1e-7)))
+    out = {}
+    for name, (label, key) in KEYS.items():
+        rs = [r for r in rows if r["label"] == label and r.get(key)]
+        if rs:
+            a, b = (np.array([float(r[k]) for r in rs]) for k in ("prob", key))
+            out[name] = float(np.median(lg(b) - lg(a)))
+    return out
+
+
 def tables(runs, split):
     res = {name: load(d, split) for name, d in runs.items()}
     have = {k: v for k, v in res.items() if v}
@@ -79,19 +102,21 @@ def tables(runs, split):
               "mirrored = BraTS tumour replaced by contralateral tissue (is the tumour needed?); inserted = a "
               "BraTS val tumour pasted into a healthy IXI scan, intensity-matched to the host (is the tumour "
               "enough?); eroded = brain mask shrunk by 1 voxel and re-z-scored (boundary cue).", "",
-              "| run | control | n | mean change | median change | above threshold before -> after |", "|---|---|---|---|---|---|"]
+              "| run | control | n | mean change | median change | median logit change | above threshold before -> after |",
+              "|---|---|---|---|---|---|---|"]
         for k, c in ctl.items():
+            lc = logit_changes(runs[k], split)
             for name in ("tumour_mirrored_brats", "tumour_inserted_ixi", "eroded_ixi", "eroded_brats"):
                 if name not in c:
                     continue
                 v = c[name]
                 L.append(f"| {k} | {name} | {v['n']} | {f(v['mean_change'])} | {f(v['median_change'])} | "
-                         f"{v['above_thr_before']} -> {v['above_thr_after']} |")
+                         f"{f(lc.get(name), 2)} | {v['above_thr_before']} -> {v['above_thr_after']} |")
             L.append(f"| {k} | mirror filled from valid contralateral tissue (median share) | | "
-                     f"{f(c['mirror_valid_frac_median'])} | | |")
+                     f"{f(c['mirror_valid_frac_median'])} | | | |")
             if "insert_ml_median" in c:
                 L.append(f"| {k} | inserted tumour: median share inside host brain / median volume (mL) | | "
-                         f"{f(c['insert_inside_frac_median'])} | {f(c['insert_ml_median'], 1)} | |")
+                         f"{f(c['insert_inside_frac_median'])} | {f(c['insert_ml_median'], 1)} | | |")
     xai = {k: Path(runs[k]) / "xai" / f"xai_summary_{split}.json" for k in have}
     xai = {k: json.loads(p.read_text()) for k, p in xai.items() if p.exists()}
     if xai:

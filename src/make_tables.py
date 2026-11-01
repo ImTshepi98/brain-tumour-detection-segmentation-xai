@@ -51,6 +51,38 @@ def logit_changes(d, split):
     return out
 
 
+def paired_dsc(runs, split, ref="main", n=1000, seed=42):
+    """Per-case DSC difference (run - ref) on the same BraTS cases, mean with a 1000-resample
+    bootstrap 95% CI. Descriptive: is an ablation better or worse than the reference model?"""
+    import csv
+    import numpy as np
+
+    def read(d):
+        p = Path(d) / f"cases_{split}.csv"
+        return {r["id"]: r for r in csv.DictReader(open(p))} if p.exists() else {}
+    base = read(runs.get(ref, ""))
+    L = []
+    for k, d in runs.items():
+        other = read(d)
+        if k == ref or not base or not other:
+            continue
+        for reg in ("ET", "TC", "WT"):
+            ids = [i for i in base if i in other and base[i].get(f"dsc_{reg}") and other[i].get(f"dsc_{reg}")]
+            if not ids:
+                continue
+            diff = np.array([float(other[i][f"dsc_{reg}"]) - float(base[i][f"dsc_{reg}"]) for i in ids])
+            rng = np.random.default_rng(seed)
+            boots = [diff[rng.integers(0, len(diff), len(diff))].mean() for _ in range(n)]
+            lo, hi = np.percentile(boots, [2.5, 97.5])
+            L.append(f"| {k} - {ref} | {reg} | {f(diff.mean())} ({f(lo)} to {f(hi)}) | {int((diff > 0).sum())} / "
+                     f"{int((diff < 0).sum())} | {len(ids)} |")
+    if not L:
+        return []
+    return ["", f"### Segmentation difference vs {ref} (paired per case, bootstrap 95% CI)", "",
+            "| comparison | region | mean DSC difference | cases better / worse | n |", "|---|---|---|---|---|"] + L + [
+            "", "A CI that includes 0 means no detectable difference on this split."]
+
+
 def tables(runs, split, cpu=None):
     res = {name: load(d, split) for name, d in runs.items()}
     have = {k: v for k, v in res.items() if v}
@@ -92,6 +124,7 @@ def tables(runs, split, cpu=None):
                 a, h = s[f"dsc_{reg}"], s[f"hd95_{reg}"]
                 L.append(f"| {k} | {reg} | {f(a['mean'])} ± {f(a['sd'])} | {f(a['median'])} | "
                          f"{f(h['mean'], 1)} ± {f(h['sd'], 1)} | {f(h['median'], 1)} | {a['n']} |")
+    L += paired_dsc(runs, split)
     L += ["", "### Inference time (batch 1, after warm-up; detection + segmentation pass)", "",
           "| run | ms per case | hardware |", "|---|---|---|"]
     for k, r in have.items():

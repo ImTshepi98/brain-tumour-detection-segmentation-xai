@@ -1,0 +1,14 @@
+# PLAN2: deviations from the proposal, for the supervisor
+
+Status (1 Nov 2026): the owner reports that the supervisor will review the findings together with the owner when the project is done. The owner has authorised starting the work. Approval of D1 and D2 is therefore **deferred to that review, not given**. The write-up will state this.
+
+**Email-ready summary.** The first model (PLAN) detects tumours perfectly (F1 = AUROC = 1.000), but the controls show that part of this score comes from recognising the dataset, not the tumour. Every tumour scan comes from BraTS and every healthy scan from IXI. A second model (PLAN2) is built so that both classes occur in both datasets. The detection unit becomes a brain hemisphere, so BraTS patients also supply healthy samples. Tumours (and sham tissue patches) are pasted into healthy hemispheres of both datasets. Pass/fail checks for shortcut learning were fixed before training (PLAN2 section 4, git tag `plan2-prereg`). The proposal's aim, architecture, datasets, metrics and Grad-CAM++ are unchanged; SHAP and LIME from the proposal timeline are added.
+
+| # | Deviation | Why | Effect on the proposal's claims |
+|---|---|---|---|
+| D1 | The detection unit is a hemisphere, not a whole scan. Whole-scan results are still reported (a scan is positive if either hemisphere is positive). | BraTS has no healthy scans, but most BraTS patients have one tumour-free hemisphere. This gives healthy samples from the same scanners as the tumours. | Detection answers "is there a tumour in this half of the brain?". Whole-scan detection of healthy BraTS scans cannot be measured, because none exist. |
+| D2 | Synthetic tumour insertion (and sham pastes of healthy tissue) are used as training data. | IXI has no tumours. Pasting BraTS tumours into IXI hemispheres gives IXI positives, so the dataset no longer predicts the label. Sham pastes stop "a pasted patch" from becoming a cue. | Pasted tumours have no mass effect or surrounding oedema. Real positives stay BraTS-only, so pasted-tumour results are reported separately. |
+| D3 | Group-balanced sampling (BraTS/IXI x tumour/healthy), and an optional domain-adversarial branch used only if a check fails. | Removes the remaining correlation between dataset and label during training. | None; this is a training detail. |
+| D4 | A segmentation-derived detector (tumour volume above a cut-off) is compared with the detection head. | Tests whether a separate detection head is needed at all. | Adds an ablation. |
+| D5 | 2 mm resolution, as in PLAN (proposal: 1 mm). | GPU budget. | Already reported for PLAN. |
+| D6 | The test subjects are the same as PLAN's, which were read once for PLAN's models. | BraTS and IXI have no further labelled data. No PLAN2 design choice uses PLAN's test numbers; the design follows from the validation controls. | Disclosed in the limitations. |

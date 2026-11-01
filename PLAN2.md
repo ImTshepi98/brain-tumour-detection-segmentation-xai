@@ -38,8 +38,8 @@ Closer to the proposal than PLAN: SHAP and LIME (proposal timeline, "Model Evalu
 
 ## C. USER ACTION items (collect in `PROGRESS.md`)
 
-- **C1** Supervisor approval of D1 and D2 (an email-ready paragraph is in `reports/p2/deviations_for_supervisor.md`, Phase P0).
-- **C2** Review the pre-registered thresholds in section 4. The owner may change any number **before** the tag `plan2-prereg` is created; after that, changes are deviations.
+- **C1** Supervisor approval of D1 and D2 (an email-ready paragraph is in `reports/p2/deviations_for_supervisor.md`, Phase P0). *Status 1 Nov: the owner reports that the supervisor will review the findings together with the owner when the project is done; the owner authorised going ahead. Recorded as approval deferred to that review, not as given.*
+- **C2** Review the pre-registered thresholds in section 4. The owner may change any number **before** the tag `plan2-prereg` is created; after that, changes are deviations. *Done 1 Nov: owner gave full go-ahead with section 4 as written (chat).*
 - **C3** After both plans finish: choose which model the dissertation leads with. Claude Code must not choose this.
 - **C4** Only the owner sets any `visual_review_complete` flag (insertion QC panels, Phase P1).
 
@@ -120,6 +120,15 @@ All checks run on val (for the decision) and are repeated in the single test rea
 | S8 | Boundary: 1-voxel erosion of the brain mask | median abs logit change < 1 and <= 5% crossings in each group | SHOULD |
 | S9 | Probe: logistic regression on pooled detection features, BraTS vs IXI within label | **Report only** (expected high, since the scans differ; S1 asks whether the *decision* uses it) | SHOULD |
 | G1 | Segmentation false positives on real negatives (pass B) | median predicted WT <= 1 mL in both B-r and I-r | MUST |
+
+**Operational definitions (added 1 Nov before the tag; they make the rules above computable and change no threshold):**
+- *Hemisphere geometry.* Axis 0 of the arrays is left-right (as `evaluate.LR_AXIS`). The midline m is the cut between voxels m-1 and m that maximises the Dice overlap of the mean train brain mask (> 0.5) with its mirror image (voxel i <-> 2m-1-i). Left hemisphere = x[m-48:m], right = x[m:m+48] flipped, both zero-padded to 48, so the midline is always the last index. The brain share lost by the 48-voxel crop is reported.
+- *Groups and worst group.* Per dataset d in {BraTS, IXI}: BA_d = (TPR over all positive cells of d + TNR over all negative cells of d) / 2 (BraTS: B+r, B+p vs B-r, B-s; IXI: I+p vs I-r, I-s). Worst-group balanced accuracy = min(BA_BraTS, BA_IXI). Used for model selection (at 0.5) and for the threshold (maximised on val; ties go to the candidate closest to 0.5).
+- *S1.* AUROC is direction-free: max(AUROC, 1 - AUROC) of the detection logit separating the two datasets, so a value far below 0.5 also fails.
+- *S3/S5/S6 cells.* S3 uses real hemispheres only for BraTS (B+r vs B-r) and pasted vs real for IXI (I+p vs I-r). S5/S6 paste into every real val negative (B-r and I-r), one fixed donor each (seed 42); "cross" means the probability is below the frozen threshold before and at or above it after.
+- *S4.* Applied to the B+r hemispheres detected at the threshold: the tumour is replaced with `mirror_tumour` on the full scan, then the hemisphere is cut again.
+- *S7.* Occlusion and Grad-CAM++ maps on the B+r hemispheres detected at the threshold. Tumour ratio and outside-brain mass as in PLAN (`explain.mass_stats`); deletion = zero the top 30% of brain voxels by the map vs the same number of random brain voxels (seed 42), probability drop compared with a one-sided paired Wilcoxon test. Passes if at least one of the two maps meets the ratio and outside-mass rule, and that map also passes deletion.
+- *G1.* Predicted WT volume of pass B (sigmoid > 0.5) in mL at 2 mm, on B-r and I-r.
 
 **Verdict rule, fixed now:** the model is called **"shortcut-controlled"** only if every MUST check passes on val. If one fails: apply the single remedy (P5) and re-run val; if it still fails, the model is reported as **"not shortcut-controlled"**, naming the failed checks, and the test read still happens once so the failure is measured, not hidden. A test result that disagrees with val is reported as is.
 

@@ -214,11 +214,46 @@ def erode_brain(x, bits=None, iterations=1):
     return out
 
 
+def insert_tumour(host, donor, donor_bits):
+    """Counterfactual for healthy scans: paste the donor's WT region into the host at the same voxels
+    (both arrays are on the SRI24 grid), kept to the host brain. Per channel present in both, the
+    tumour keeps its contrast relative to the donor's tumour-free brain and is rescaled to the host
+    brain's mean/SD; the channel is then re-z-scored over the host brain (the preprocessing rule).
+    Channels absent in the host (IXI T1ce/FLAIR) stay 0. Returns (x_new float32, fraction of donor
+    WT voxels inside the host brain, inserted volume in mL at 2 mm)."""
+    host, donor = np.asarray(host, np.float32), np.asarray(donor, np.float32)
+    hb, db = (host != 0).any(0), (donor != 0).any(0)
+    wt = (np.asarray(donor_bits) & 4) > 0
+    region = wt & hb
+    out = host.copy()
+    if not region.any():
+        return out, 0.0, 0.0
+    for c in range(host.shape[0]):
+        hv, dn = host[c][hb], donor[c][db & ~wt]
+        if not hv.any() or not dn.any():
+            continue
+        z = (donor[c][region] - dn.mean(dtype=np.float64)) / dn.std(dtype=np.float64)
+        out[c][region] = z * hv.std(dtype=np.float64) + hv.mean(dtype=np.float64)
+        out[c][hb] = zscore_nonzero(out[c][hb])[0]
+    return out, float(region.sum() / wt.sum()), float(region.sum() * 8 / 1000)
+
+
+def insertion_donors(cohort, seed=SEED):
+    """Healthy index -> BraTS donor index with a non-empty WT, in a fixed seeded order (cycled)."""
+    pos = [i for i in range(len(cohort)) if cohort.has_seg[i] and ((cohort.y[i] & 4) > 0).any()]
+    neg = [i for i in range(len(cohort)) if cohort.label[i] == 0]
+    if not pos:
+        return {}
+    order = np.random.default_rng(seed).permutation(pos)
+    return {j: int(order[k % len(order)]) for k, j in enumerate(neg)}
+
+
 @torch.no_grad()
 def controls(model, cohort, device, thr):
     def prob(arr):
         return float(torch.sigmoid(model.forward_cls(torch.from_numpy(arr[None]).float().to(device)))[0])
     rows = []
+    donors = insertion_donors(cohort)
     for i in range(len(cohort)):
         x = cohort.x[i].astype(np.float32)
         base = prob(x)
@@ -227,6 +262,10 @@ def controls(model, cohort, device, thr):
         if cohort.has_seg[i]:
             xm, frac = mirror_tumour(x, cohort.y[i])
             r["prob_mirrored"], r["mirror_valid_frac"] = prob(xm), frac
+        if i in donors:
+            d = donors[i]
+            xi, inside, ml = insert_tumour(x, cohort.x[d], cohort.y[d])
+            r.update(prob_inserted=prob(xi), insert_donor=cohort.ids[d], insert_inside_frac=inside, insert_ml=ml)
         rows.append(r)
 
     def summ(rs, key):
@@ -239,6 +278,10 @@ def controls(model, cohort, device, thr):
     ixi = [r for r in rows if r["label"] == 0]
     return rows, dict(tumour_mirrored_brats=summ(br, "prob_mirrored"), eroded_ixi=summ(ixi, "prob_eroded"),
                       eroded_brats=summ(br, "prob_eroded"),
+                      tumour_inserted_ixi=summ([r for r in ixi if "prob_inserted" in r], "prob_inserted"),
+                      insert_inside_frac_median=float(np.nanmedian([r["insert_inside_frac"] for r in ixi
+                                                                    if "insert_inside_frac" in r] or [np.nan])),
+                      insert_ml_median=float(np.nanmedian([r["insert_ml"] for r in ixi if "insert_ml" in r] or [np.nan])),
                       mirror_valid_frac_median=float(np.nanmedian([r["mirror_valid_frac"] for r in br]))
                       if br else float("nan"))
 
@@ -347,7 +390,7 @@ def main(argv=None):
     ap.add_argument("--confirm-test", action="store_true")
     ap.add_argument("--threshold", type=float, default=None, help="fixed threshold (val only unless frozen)")
     ap.add_argument("--threshold-from", help="results_val.json whose chosen threshold is used (required for test)")
-    ap.add_argument("--controls", action="store_true", help="tumour-mirroring and mask-erosion controls (val only)")
+    ap.add_argument("--controls", action="store_true", help="tumour-mirroring, tumour-insertion and mask-erosion controls (val only)")
     ap.add_argument("--brats-dir")
     ap.add_argument("--ixi-dirs", nargs="*", default=[])
     ap.add_argument("--brats-sdt-dirs", nargs="*", default=[])

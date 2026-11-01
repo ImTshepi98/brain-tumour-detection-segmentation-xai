@@ -76,14 +76,22 @@ def tables(runs, split):
     ctl = {k: r["controls"] for k, r in have.items() if r.get("controls")}
     if ctl:
         L += ["", "### Controls (val): change in tumour probability", "",
+              "mirrored = BraTS tumour replaced by contralateral tissue (is the tumour needed?); inserted = a "
+              "BraTS val tumour pasted into a healthy IXI scan, intensity-matched to the host (is the tumour "
+              "enough?); eroded = brain mask shrunk by 1 voxel and re-z-scored (boundary cue).", "",
               "| run | control | n | mean change | median change | above threshold before -> after |", "|---|---|---|---|---|---|"]
         for k, c in ctl.items():
-            for name in ("tumour_mirrored_brats", "eroded_ixi", "eroded_brats"):
+            for name in ("tumour_mirrored_brats", "tumour_inserted_ixi", "eroded_ixi", "eroded_brats"):
+                if name not in c:
+                    continue
                 v = c[name]
                 L.append(f"| {k} | {name} | {v['n']} | {f(v['mean_change'])} | {f(v['median_change'])} | "
                          f"{v['above_thr_before']} -> {v['above_thr_after']} |")
             L.append(f"| {k} | mirror filled from valid contralateral tissue (median share) | | "
                      f"{f(c['mirror_valid_frac_median'])} | | |")
+            if "insert_ml_median" in c:
+                L.append(f"| {k} | inserted tumour: median share inside host brain / median volume (mL) | | "
+                         f"{f(c['insert_inside_frac_median'])} | {f(c['insert_ml_median'], 1)} | |")
     xai = {k: Path(runs[k]) / "xai" / f"xai_summary_{split}.json" for k in have}
     xai = {k: json.loads(p.read_text()) for k, p in xai.items() if p.exists()}
     if xai:

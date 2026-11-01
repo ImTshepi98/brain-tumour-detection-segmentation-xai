@@ -60,6 +60,39 @@ def test_mirror_tumour_uses_contralateral_tissue():
     assert frac2 < 1 and np.isfinite(xm2).all()
 
 
+def test_insert_tumour_matches_host_and_keeps_contrast():
+    rng = np.random.default_rng(5)
+    host = np.zeros((4, 24, 24, 24), np.float32)
+    host[[0, 2], 3:21, 3:21, 3:21] = rng.normal(0, 1, (2, 18, 18, 18))  # IXI-like: T1ce/FLAIR absent
+    donor = np.zeros((4, 24, 24, 24), np.float32)
+    donor[:, 2:22, 2:22, 2:22] = rng.normal(0, 1, (4, 20, 20, 20))
+    bits = np.zeros((24, 24, 24), np.uint8)
+    bits[1:7, 8:12, 8:12] = 7  # WT partly outside the host brain (x < 3)
+    donor[:, bits > 0] += 3.0  # tumour 3 SD above the donor's healthy brain
+    xi, inside, ml = ev.insert_tumour(host, donor, bits)
+    region = (bits > 0) & (host != 0).any(0)
+    assert inside == pytest.approx(region.sum() / (bits > 0).sum()) and ml == pytest.approx(region.sum() * 8 / 1000)
+    assert not xi[[1, 3]].any()  # absent channels stay absent
+    hb = (host != 0).any(0)
+    assert not (((xi != 0).any(0)) & ~hb).any()  # nothing pasted outside the host brain
+    for c in (0, 2):
+        v = xi[c][hb]
+        assert abs(v.mean()) < 1e-4 and abs(v.std() - 1) < 1e-3  # re-z-scored over the host brain
+        assert xi[c][region].mean() - xi[c][hb & ~region].mean() > 2.5  # contrast kept (~3 SD)
+
+
+def test_insertion_donors_fixed_and_cover_all_healthy():
+    class Cohort(list):
+        pass
+    c = Cohort(range(6))
+    c.label = np.array([1, 1, 0, 0, 0, 1])
+    c.has_seg = c.label.astype(bool)
+    full, empty = np.full((4, 4, 4), 7, np.uint8), np.zeros((4, 4, 4), np.uint8)
+    c.y = [full, empty, empty, empty, empty, full]
+    d = ev.insertion_donors(c)
+    assert d == ev.insertion_donors(c) and set(d) == {2, 3, 4} and set(d.values()) <= {0, 5}  # 1 has no WT
+
+
 def test_erode_brain_shrinks_and_rezscores():
     x, _, brain = syn.make_case((24, 24, 24), tumour=False, rng=np.random.default_rng(4))
     e = ev.erode_brain(x)
@@ -71,7 +104,8 @@ def test_erode_brain_shrinks_and_rezscores():
 def test_evaluate_val_then_test_once(tmp_path):
     res = ev.main(["--debug", "--out", str(tmp_path), "--controls"])
     assert res["split"] == "val" and res["threshold_rule"] == "max_f1_on_val"
-    assert {"tumour_mirrored_brats", "eroded_ixi"} <= set(res["controls"])
+    assert {"tumour_mirrored_brats", "tumour_inserted_ixi", "eroded_ixi"} <= set(res["controls"])
+    assert res["controls"]["tumour_inserted_ixi"]["n"] > 0
     assert (tmp_path / "cases_val.csv").exists() and (tmp_path / "figures" / "roc_val.png").exists()
     with pytest.raises(AssertionError, match="locked"):
         ev.main(["--debug", "--out", str(tmp_path), "--split", "test"])

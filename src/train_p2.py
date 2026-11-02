@@ -43,6 +43,16 @@ from train import (Runner, git_commit, host_rss_gb, load_config, lr_lambda, pick
 SIGNATURE = "brats-dual-p2-train-v1"
 
 
+def malloc_trim():
+    """Return free glibc heap pages to the OS (Linux only; no effect on the numbers). p2-main r1 grew ~4.4 MB/step
+    with nothing held per step, so this tells heap fragmentation apart from a real leak in the step logs."""
+    try:
+        import ctypes
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except (OSError, AttributeError):
+        pass
+
+
 @torch.no_grad()
 def predict(net, ev, device, bs=4, seg_a=True):
     """Per-row detection prob/logit, pass-B WT volume (mL) and pass-A DSC (B+r rows)."""
@@ -228,8 +238,10 @@ def main(argv=None):
             if t_first_step is None:
                 t_first_step = time.time() - t0
             if step < 2 or (step + 1) % 50 == 0:
+                before = host_rss_gb() or 0
+                malloc_trim()
                 print(f"epoch {epoch} step {step + 1}/{steps_per_epoch} loss {float(loss.detach()):.4f} "
-                      f"rss {host_rss_gb() or 0:.2f} GB", flush=True)
+                      f"rss {before:.2f} -> {host_rss_gb() or 0:.2f} GB after trim", flush=True)
         t_train = time.time() - te
         tv = time.time()
         recs = predict(net, val, device, cfg.get("val_batch_size", 4))
@@ -258,6 +270,7 @@ def main(argv=None):
         rss.append(rec["host_rss_gb"])
         del recs, state
         gc.collect()
+        malloc_trim()
 
     done = dict(stopped=stopped, epochs_completed=len(history), next_epoch=len(history), epochs_planned=epochs,
                 start_epoch=start_epoch, best=best, total_seconds=time.time() - t0, data_load_seconds=t_load,

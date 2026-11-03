@@ -141,14 +141,15 @@ def gradcam_det(model, x, layer):
 
 
 @torch.no_grad()
-def occlusion(model, x, device, bs=32):
+def occlusion(model, x, device, bs=32, stride=OCC_STRIDE):
     """Occlusion map of one hemisphere (4, D, H, W): mean logit drop over the 16 mm cubes covering each voxel,
-    each cube filled with the Gaussian-blurred input (sigma 8 mm); cubes without brain are skipped. ReLU'd."""
+    each cube filled with the Gaussian-blurred input (sigma 8 mm); cubes without brain are skipped. ReLU'd.
+    stride: the checks use OCC_STRIDE (8 mm); only the GUI preview passes a coarser one."""
     x = np.asarray(x, np.float32)
     base = np.stack([ndi.gaussian_filter(c, BLUR_SIGMA) for c in x])
     brain = (x != 0).any(0)
     shape = x.shape[1:]
-    starts = [list(range(0, max(s - OCC_CUBE, 0) + 1, OCC_STRIDE)) for s in shape]
+    starts = [list(range(0, max(s - OCC_CUBE, 0) + 1, stride)) for s in shape]
     for d, s in enumerate(shape):
         if starts[d][-1] + OCC_CUBE < s:
             starts[d].append(s - OCC_CUBE)

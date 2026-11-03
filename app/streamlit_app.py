@@ -1,7 +1,8 @@
 """Phase 8: local Streamlit GUI for the dual-head model (CPU).
 
   streamlit run app/streamlit_app.py
-Model: data_local/main/best.pt (or env BRATS_DUAL_CKPT); bundled cases: data_local/cases/*.npz
+Models: PLAN data_local/main/best.pt (or env BRATS_DUAL_CKPT); PLAN2 data_local/p2_main/best.pt (or env
+BRATS_DUAL_P2_CKPT) with its results_val.json for the frozen thresholds. Bundled cases: data_local/cases/*.npz
 (or env BRATS_DUAL_CASES). Uploads must already be BraTS-like 2 mm arrays from
 src/preprocess_one.py (skull-stripped, SRI24 grid, cropped, 2x pooled, shared SynthStrip boundary).
 """
@@ -18,8 +19,13 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 import infer  # noqa: E402
+import p2_infer  # noqa: E402
+
+sys.path.insert(0, str(ROOT / "app"))
+import p2_view  # noqa: E402
 
 CKPT = Path(os.environ.get("BRATS_DUAL_CKPT", ROOT / "data_local/main/best.pt"))
+P2_CKPT = Path(os.environ.get("BRATS_DUAL_P2_CKPT", ROOT / "data_local/p2_main/best.pt"))
 CASES = Path(os.environ.get("BRATS_DUAL_CASES", ROOT / "data_local/cases"))
 COLOURS = {"WT": (1.0, 0.85, 0.0), "TC": (1.0, 0.3, 0.0), "ET": (0.9, 0.0, 0.2)}  # drawn WT, TC, ET
 CH = {"T1": 0, "T1ce": 1, "T2": 2, "FLAIR": 3}
@@ -34,12 +40,28 @@ def get_model(path):
     return infer.load(path)
 
 
-if not CKPT.exists():
-    st.warning(f"No model checkpoint at {CKPT}. Download `main/best.pt` into data_local/main/ first.")
+@st.cache_resource
+def get_p2_model(path):
+    return p2_infer.load(path)
+
+
+with st.sidebar:
+    st.header("Model")
+    which = st.radio("Model", ["PLAN2: per hemisphere (shortcut-checked)", "PLAN: whole scan"],
+                     help="PLAN2 analyses each hemisphere separately and was trained so that tumour and "
+                          "tumour-free samples come from both datasets. PLAN scores perfectly on test but was "
+                          "shown to use a dataset shortcut.")
+P2 = which.startswith("PLAN2")
+ck = P2_CKPT if P2 else CKPT
+if not ck.exists():
+    st.warning(f"No model checkpoint at {ck}. Copy the run's best.pt there first.")
     st.stop()
-model, state, thr = get_model(str(CKPT))
-st.caption(f"Model: {state['config'].get('name')} (epoch {state['epoch']}), detection threshold {thr:.3f} "
-           f"(frozen on validation), shared boundary border {state['config'].get('border')} mm.")
+if P2:
+    model, state, thr = get_p2_model(str(ck))
+else:
+    model, state, thr = get_model(str(ck))
+    st.caption(f"Model: PLAN {state['config'].get('name')} (epoch {state['epoch']}), detection threshold {thr:.3f} "
+               f"(frozen on validation), shared boundary border {state['config'].get('border')} mm.")
 
 with st.sidebar:
     st.header("Case")
@@ -60,7 +82,7 @@ with st.sidebar:
             tmp.write_bytes(up.getvalue())
             case_path = tmp
     st.header("Display")
-    cam_mode = st.selectbox("Grad-CAM++ overlay", ["off", "detection", "segmentation"])
+    cam_mode = "off" if P2 else st.selectbox("Grad-CAM++ overlay", ["off", "detection", "segmentation"])
     view = st.selectbox("View", ["axial", "coronal", "sagittal"])
     show_gt = st.checkbox("Show ground-truth contour (if available)", value=False)
 
@@ -68,6 +90,13 @@ if case_path is None:
     st.stop()
 try:
     x, y, meta = infer.load_case(case_path)
+except AssertionError as e:
+    st.error(f"Input rejected: {e}")
+    st.stop()
+if P2:
+    p2_view.render(model, state, thr, x, y, (str(case_path), Path(case_path).stat().st_mtime), view, show_gt)
+    st.stop()
+try:
     res = infer.analyse(model, x.astype(np.float32), thr, None if cam_mode == "off" else cam_mode)
 except AssertionError as e:
     st.error(f"Input rejected: {e}")

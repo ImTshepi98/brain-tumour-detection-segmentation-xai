@@ -69,8 +69,11 @@ def test_streamlit_app_runs(debug_run):
     try:
         at = AppTest.from_file(str(ROOT / "app/streamlit_app.py"), default_timeout=120).run()
         assert not at.exception, at.exception
+        if not any("Tumour probability" in m.label for m in at.metric):  # PLAN2 is the default model
+            at.sidebar.radio[0].set_value("PLAN: whole scan").run()
+        assert not at.exception, at.exception
         assert any("Tumour probability" in m.label for m in at.metric)
-        at.selectbox[1].select("segmentation").run()  # Grad-CAM++ for a bundled case
+        next(b for b in at.selectbox if b.label == "Grad-CAM++ overlay").select("segmentation").run()
         assert not at.exception, at.exception
     finally:
         sys.modules["__main__"] = main_mod

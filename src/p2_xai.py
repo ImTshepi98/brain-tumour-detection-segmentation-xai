@@ -74,7 +74,7 @@ def shap_regions(x, wt_pred):
     return lab, k
 
 
-def shap_values(model, x, regions, base, device, evals=SHAP_EVALS, seed=0):
+def shap_values(model, x, regions, base, device, evals=SHAP_EVALS, seed=0, bs=32):
     """Permutation Shapley (antithetic pairs) for logit and volume; returns (phi_logit, phi_vol) per region."""
     n = int(regions.max()) + 1
     rng = np.random.default_rng(seed)
@@ -88,7 +88,7 @@ def shap_values(model, x, regions, base, device, evals=SHAP_EVALS, seed=0):
         for j in order:
             m[j] = 1
             masks.append(m.copy())
-    lg, vol = _eval_masks(model, x, base, regions, masks, device)
+    lg, vol = _eval_masks(model, x, base, regions, masks, device, bs=bs)
     phi_l, phi_v = np.zeros(n), np.zeros(n)
     k = 0
     for order in orders:

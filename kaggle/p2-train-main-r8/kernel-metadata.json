@@ -1,0 +1,26 @@
+{
+  "id": "leweletp/brats-dual-p2-train-main-r8",
+  "title": "brats-dual-p2-train-main-r8",
+  "code_file": "run.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "machine_shape": "NvidiaTeslaT4",
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [
+    "leweletp/brats-dual-code"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [
+    "leweletp/brats-dual-prep-brats-2mm",
+    "leweletp/brats-dual-prep-ixi-s0",
+    "leweletp/brats-dual-prep-ixi-s1",
+    "leweletp/brats-dual-prep-ixi-s2",
+    "leweletp/brats-dual-sdt-brats-s0",
+    "leweletp/brats-dual-sdt-brats-s1",
+    "leweletp/brats-dual-sdt-brats-s2",
+    "leweletp/brats-dual-p2-train-main-r7"
+  ]
+}

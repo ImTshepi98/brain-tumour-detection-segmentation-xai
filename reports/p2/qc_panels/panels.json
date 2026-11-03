@@ -97,5 +97,11 @@
    "ml": 88.056
   }
  ],
- "visual_review_complete": false
+ "visual_review_complete": true,
+ "review": {
+  "by": "owner (Tshepiso Lewele)",
+  "date": "2026-11-03",
+  "words": "panels approved",
+  "noted": "shams 7-10 near-empty (donor tumour at/over midline); accepted as a recorded limitation, S6 also reported on shams >= 1 mL"
+ }
 }

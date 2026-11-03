@@ -244,7 +244,7 @@ def sanity(model, x, maps, device):
     return out
 
 
-def pick_cases(rows, seed=42, plan=(("B+r", 10), ("B+p", 5), ("I+p", 5), ("B-r", 5), ("I-r", 5))):
+def pick_cases(rows, seed=42, plan=(("B+r", 20), ("B+p", 10), ("I+p", 10), ("B-r", 10), ("I-r", 10))):
     rng = np.random.default_rng(seed)
     out = []
     for cell, n in plan:

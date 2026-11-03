@@ -1,0 +1,27 @@
+{
+ "min_ml": 1.0,
+ "shams_dropped": {
+  "B-s": 8,
+  "I-s": 31
+ },
+ "head": {
+  "value": {
+   "brats": 0.01694915254237288,
+   "brats_n": 59,
+   "brats_median_abs_logit_change": 0.11407279968261719,
+   "ixi": 0.02857142857142857,
+   "ixi_n": 140,
+   "ixi_median_abs_logit_change": 0.07718420028686523
+  },
+  "passed": true
+ },
+ "seg": {
+  "value": {
+   "brats": 0.05084745762711865,
+   "brats_n": 59,
+   "ixi": 0.04316546762589928,
+   "ixi_n": 139
+  },
+  "passed": false
+ }
+}

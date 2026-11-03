@@ -140,7 +140,7 @@ This does not change the pre-registered verdict, which uses all shams. It is rep
 
 | Method | Deletion AUC (random 0.396) | Insertion AUC (random 0.962) | Tumour ratio | Outside-brain mass | Pointing | Sanity stage 1 / stage 2 | Seconds per case |
 |---|---|---|---|---|---|---|---|
-| Grad-CAM++ (enc[-2], new layer) | 0.776 | 0.990 | 1.09 | 0.52 | 0.83 | 0.998 / 0.539 | 0.02 |
+| Grad-CAM++ (enc[-2], new layer) | 0.776 | 0.990 | 1.09 | 0.52 | 0.825 | 0.998 / 0.539 | 0.02 |
 | Grad-CAM++ (enc[-1], PLAN's layer) | 0.593 | 0.981 | 0.48 | 0.69 | 0.25 | – | 0.02 |
 | Occlusion | 0.470 | 0.999 | 1.12 | 0.25 | 0.43 | 0.284 / −0.036 | 34 |
 | Region SHAP | 0.603 | 0.998 | 0.001 | 0.99 | 0.03 | 0.502 / 0.017 | 96 |

@@ -69,12 +69,12 @@ def test_streamlit_app_runs(debug_run):
     try:
         at = AppTest.from_file(str(ROOT / "app/streamlit_app.py"), default_timeout=120).run()
         assert not at.exception, at.exception
-        if not any("Tumour probability" in m.label for m in at.metric):  # PLAN2 is the default model
-            at.sidebar.radio[0].set_value("PLAN: whole scan").run()
+        at.sidebar.radio(key="model").set_value("Whole-scan model").run()  # hemisphere model is the default
         assert not at.exception, at.exception
-        assert any("Tumour probability" in m.label for m in at.metric)
-        next(b for b in at.selectbox if b.label == "Grad-CAM++ overlay").select("segmentation").run()
+        assert any("Tumour probability" in m.value for m in at.markdown)
+        at.radio(key="ws_overlay").set_value("Segmentation heat map").run()
         assert not at.exception, at.exception
+        assert not any("PLAN" in m.value for m in at.markdown)
     finally:
         sys.modules["__main__"] = main_mod
         os.environ.pop("BRATS_DUAL_CKPT")

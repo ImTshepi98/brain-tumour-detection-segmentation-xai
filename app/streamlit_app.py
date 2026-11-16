@@ -1,9 +1,10 @@
 """Local Streamlit GUI for brain tumour detection, segmentation and explanation (CPU).
 
   streamlit run app/streamlit_app.py
-Models: Hemisphere model data_local/p2_main/best.pt (or env BRATS_DUAL_P2_CKPT) with its results_val.json for
-the frozen thresholds; Whole-scan model data_local/main/best.pt (or env BRATS_DUAL_CKPT). Example cases:
-data_local/cases/*.npz (or env BRATS_DUAL_CASES). Uploads must already be BraTS-like 2 mm arrays from
+Models: Hemisphere model (SCH-Net) data_local/p2_main/best.pt, else weights/schnet/best.pt (or env
+BRATS_DUAL_P2_CKPT), with the frozen thresholds next to it; Whole-scan model (Model 1) data_local/main/best.pt, else
+weights/model1_dualhead/best.pt (or env BRATS_DUAL_CKPT). Example cases: data_local/cases/*.npz, else
+examples/*.npz (or env BRATS_DUAL_CASES). Uploads must already be BraTS-like 2 mm arrays from
 src/preprocess_one.py (skull-stripped, SRI24 grid, cropped, 2x pooled, shared SynthStrip boundary).
 """
 from __future__ import annotations
@@ -25,9 +26,16 @@ sys.path.insert(0, str(ROOT / "app"))
 import hemisphere_view  # noqa: E402
 import ui  # noqa: E402
 
-CKPT = Path(os.environ.get("BRATS_DUAL_CKPT", ROOT / "data_local/main/best.pt"))
-HEMI_CKPT = Path(os.environ.get("BRATS_DUAL_P2_CKPT", ROOT / "data_local/p2_main/best.pt"))
-CASES = Path(os.environ.get("BRATS_DUAL_CASES", ROOT / "data_local/cases"))
+def _first(*paths):
+    """First existing path (local data_local/ copies take precedence over the published weights/ and examples/)."""
+    return next((p for p in paths if p.exists()), paths[-1])
+
+
+CKPT = Path(os.environ.get("BRATS_DUAL_CKPT", _first(ROOT / "data_local/main/best.pt",
+                                                     ROOT / "weights/model1_dualhead/best.pt")))
+HEMI_CKPT = Path(os.environ.get("BRATS_DUAL_P2_CKPT", _first(ROOT / "data_local/p2_main/best.pt",
+                                                             ROOT / "weights/schnet/best.pt")))
+CASES = Path(os.environ.get("BRATS_DUAL_CASES", _first(ROOT / "data_local/cases", ROOT / "examples")))
 MODELS = {
     "Hemisphere model": "Recommended. Analyses each hemisphere; validated against dataset shortcuts.",
     "Whole-scan model": "Original model. Accurate segmentation; detection partly relies on the dataset.",

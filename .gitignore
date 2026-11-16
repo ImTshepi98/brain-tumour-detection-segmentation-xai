@@ -8,3 +8,8 @@ kaggle/_code_dataset/src/
 kaggle/_code_dataset/configs/
 kaggle/_code_dataset/GIT_COMMIT
 kaggle/_code_dataset/data/
+.claude/
+*.pyc
+.pytest_cache/
+~$*
+!weights/**/*.pt

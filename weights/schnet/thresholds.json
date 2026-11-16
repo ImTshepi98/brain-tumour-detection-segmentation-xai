@@ -1,0 +1,5 @@
+{
+ "threshold_head": 0.5,
+ "threshold_seg": 1.544,
+ "source": "p2-main validation (results_val.json)"
+}

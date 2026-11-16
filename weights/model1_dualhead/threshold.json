@@ -1,0 +1,7 @@
+{
+ "threshold": 0.0167866774572758,
+ "threshold_rule": "max_f1_on_val",
+ "source": "eval-main-r5-val v5",
+ "protocol_hash": "948372a86b6ea63d13fdbf086bdf6bf9f2d4b8f12445865df0968e7b1144b655",
+ "epoch": 32
+}

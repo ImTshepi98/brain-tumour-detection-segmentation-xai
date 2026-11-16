@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Brain Tumour Detection and Segmentation using Deep Learning and XAI"
+type: software
+authors:
+  - family-names: Lewele
+    given-names: Tshepiso Promise
+    affiliation: Sol Plaatje University
+version: "1.0"
+date-released: "2026-11-16"
+license: MIT
+repository-code: "https://github.com/ImTshepi98/brain-tumour-detection-segmentation-xai"
+keywords:
+  - brain tumour
+  - segmentation
+  - detection
+  - 3D U-Net
+  - explainable AI
+  - shortcut learning
+  - BraTS
